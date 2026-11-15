@@ -1,5 +1,6 @@
 package net.j40climb.florafauna_hammer.playtest;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.HammerAction;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningShape;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MultiToolAbilityData;
@@ -34,18 +35,18 @@ final class HammerActionWheelPlaytest {
 
     private static void choose(Playtest t, HammerAction action) {
         t.client("Open the Hammer action wheel", mc -> KeyMapping.click(ClientSetup.HAMMER_ACTION_WHEEL_KEY.get().getKey()));
-        t.awaitClient("Show the five wheel actions", mc -> mc.screen instanceof HammerActionWheel
-                && mc.screen.children().stream().filter(Button.class::isInstance).count() == HammerAction.values().length);
+        t.awaitClient("Show the five wheel actions", mc -> mc.gui.screen() instanceof HammerActionWheel
+                && mc.gui.screen().children().stream().filter(Button.class::isInstance).count() == HammerAction.values().length);
         if (action == HammerAction.TILL) t.screenshot("hammer-action-wheel");
         t.client("Click " + action.getSerializedName(), mc -> {
-            var button = mc.screen.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
+            var button = mc.gui.screen().children().stream().filter(Button.class::isInstance).map(Button.class::cast)
                     .filter(b -> b.getMessage().equals(action.label())).findFirst().orElseThrow();
             var click = new MouseButtonEvent(button.getX() + button.getWidth() / 2.0, button.getY() + button.getHeight() / 2.0,
-                    new MouseButtonInfo(0, 0));
-            Playtest.require(mc.screen.mouseClicked(click, false), "Wheel ignored mouse click");
+                    new MouseButtonInfo(InputConstants.MOUSE_BUTTON_LEFT, 0));
+            Playtest.require(mc.gui.screen().mouseClicked(click, false), "Wheel ignored mouse click");
         });
         t.awaitServer("Persist " + action.getSerializedName() + " on the server's Hammer", p -> p.getMainHandItem().get(HammerRegistry.HAMMER_ACTION) == action);
-        t.awaitClient("Sync " + action.getSerializedName() + " back to the held tool", mc -> mc.screen == null
+        t.awaitClient("Sync " + action.getSerializedName() + " back to the held tool", mc -> mc.gui.screen() == null
                 && mc.player.getMainHandItem().get(HammerRegistry.HAMMER_ACTION) == action);
     }
 }

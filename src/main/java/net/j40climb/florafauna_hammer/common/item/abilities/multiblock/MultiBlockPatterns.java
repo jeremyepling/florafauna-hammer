@@ -146,7 +146,7 @@ public final class MultiBlockPatterns {
     }
 
     private static boolean isStoneOrDeepslateOre(BlockState state) {
-        return state.is(Tags.Blocks.ORES_IN_GROUND_STONE) || state.is(Tags.Blocks.ORES_IN_GROUND_DEEPSLATE);
+        return state.is(Tags.BlockItems.ORES_IN_GROUND_STONE.block()) || state.is(Tags.BlockItems.ORES_IN_GROUND_DEEPSLATE.block());
     }
 
     private static Plan tunnel(Player player, ItemStack tool, MiningModeData mode, BlockPos center, Direction face) {

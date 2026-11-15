@@ -1,5 +1,6 @@
 package net.j40climb.florafauna_hammer.playtest;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.j40climb.florafauna_hammer.HammerMod;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MultiToolAbilityData;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.RightClickAction;
@@ -72,23 +73,23 @@ public final class HammerPlaytest {
         t.client("Select the hammer and press its configured menu key", mc -> {
             mc.player.getInventory().setSelectedSlot(0);
             mc.options.setCameraType(CameraType.FIRST_PERSON);
-            mc.options.hideGui = false;
+            if (mc.gui.hud.isHidden()) mc.gui.hud.toggle();
             KeyMapping.click(ClientSetup.HAMMER_CONFIG_KEY.get().getKey());
         });
-        t.awaitClient("Open the tool configuration screen", mc -> mc.screen instanceof ToolConfigScreen);
+        t.awaitClient("Open the tool configuration screen", mc -> mc.gui.screen() instanceof ToolConfigScreen);
         t.client("Click the speed control to switch from Efficiency to Instabreak", mc -> {
             clickConfigButton(mc, "speed.efficiency");
-            mc.screen.onClose();
+            mc.gui.screen().onClose();
         });
         t.awaitServer("Receive the speed update on the server", p ->
                 p.getMainHandItem().get(HammerRegistry.TOOL_CONFIG).miningSpeed() == MiningSpeed.INSTABREAK);
         t.awaitClient("Synchronize the server's tool configuration back to the client", mc ->
                 mc.player.getMainHandItem().get(HammerRegistry.TOOL_CONFIG).miningSpeed() == MiningSpeed.INSTABREAK);
         t.client("Press the menu key again", mc -> KeyMapping.click(ClientSetup.HAMMER_CONFIG_KEY.get().getKey()));
-        t.awaitClient("Reopen the tool configuration screen", mc -> mc.screen instanceof ToolConfigScreen);
+        t.awaitClient("Reopen the tool configuration screen", mc -> mc.gui.screen() instanceof ToolConfigScreen);
         t.client("Verify the persisted speed label and press Cycle Mining Mode", mc -> {
             configButton(mc, "speed.instabreak");
-            mc.screen.onClose();
+            mc.gui.screen().onClose();
             KeyMapping.click(ClientSetup.CYCLE_MINING_MODE_KEY.get().getKey());
         });
         t.awaitServer("Select flat 3×3 mining on the server", p ->
@@ -140,11 +141,11 @@ public final class HammerPlaytest {
         String current = exact ? "vein.same_ore" : "vein.exact";
         String next = exact ? "vein.exact" : "vein.same_ore";
         t.client("Press the menu key to change vein matching", mc -> KeyMapping.click(ClientSetup.HAMMER_CONFIG_KEY.get().getKey()));
-        t.awaitClient("Open the vein matching control", mc -> mc.screen instanceof ToolConfigScreen);
+        t.awaitClient("Open the vein matching control", mc -> mc.gui.screen() instanceof ToolConfigScreen);
         t.client("Click the vein matching control to select " + next, mc -> {
             clickConfigButton(mc, current);
             configButton(mc, next);
-            mc.screen.onClose();
+            mc.gui.screen().onClose();
         });
         t.awaitServer("Save vein matching " + next + " on the held hammer", p ->
                 p.getMainHandItem().get(HammerRegistry.TOOL_CONFIG).exactVein() == exact);
@@ -156,11 +157,11 @@ public final class HammerPlaytest {
         String current = enable ? "lighting.off" : "lighting.on";
         String next = enable ? "lighting.on" : "lighting.off";
         t.client("Press the tool menu key to change auto torches", mc -> KeyMapping.click(ClientSetup.HAMMER_CONFIG_KEY.get().getKey()));
-        t.awaitClient("Open the tunnel lighting control", mc -> mc.screen instanceof ToolConfigScreen);
+        t.awaitClient("Open the tunnel lighting control", mc -> mc.gui.screen() instanceof ToolConfigScreen);
         t.client("Click the auto torches control to select " + next, mc -> {
             clickConfigButton(mc, current);
             configButton(mc, next);
-            mc.screen.onClose();
+            mc.gui.screen().onClose();
         });
         t.awaitServer("Save auto torches " + next + " on the held Hammer", p ->
                 p.getMainHandItem().get(HammerRegistry.TOOL_CONFIG).tunnelLighting() == enable);
@@ -231,7 +232,7 @@ public final class HammerPlaytest {
     private static void prepare(ServerPlayer player) {
         ServerLevel level = player.level().getServer().overworld();
         var origin = new BlockPos(-2, 199, -5);
-        var fixture = level.getStructureManager().get(Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "plots/hammer")).orElseThrow();
+        var fixture = level.getStructureTemplateManager().get(Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "plots/hammer")).orElseThrow();
         var placement = new StructurePlaceSettings().setIgnoreEntities(true);
         placement.setBoundingBox(fixture.getBoundingBox(placement, origin));
         Playtest.require(fixture.placeInWorld(level, origin, origin, placement, level.getRandom(), Block.UPDATE_CLIENTS),
@@ -248,14 +249,14 @@ public final class HammerPlaytest {
     private static void clickConfigButton(Minecraft mc, String setting) {
         Button button = configButton(mc, setting);
         var click = new MouseButtonEvent(button.getX() + button.getWidth() / 2.0,
-                button.getY() + button.getHeight() / 2.0, new MouseButtonInfo(0, 0));
-        Playtest.require(mc.screen.mouseClicked(click, false), "Button click was ignored: " + setting);
-        mc.screen.mouseReleased(click);
+                button.getY() + button.getHeight() / 2.0, new MouseButtonInfo(InputConstants.MOUSE_BUTTON_LEFT, 0));
+        Playtest.require(mc.gui.screen().mouseClicked(click, false), "Button click was ignored: " + setting);
+        mc.gui.screen().mouseReleased(click);
     }
 
     private static Button configButton(Minecraft mc, String setting) {
         String expected = Component.translatable("gui.florafauna.tool_config." + setting).getString();
-        return mc.screen.children().stream()
+        return mc.gui.screen().children().stream()
                 .filter(Button.class::isInstance).map(Button.class::cast)
                 .filter(button -> button.getMessage().getString().equals(expected))
                 .findFirst().orElseThrow(() -> new AssertionError("Missing config button: " + expected));

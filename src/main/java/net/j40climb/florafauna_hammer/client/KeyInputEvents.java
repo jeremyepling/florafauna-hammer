@@ -40,26 +40,26 @@ public class KeyInputEvents {
             holdingThrow = false;
         }
         var key = ClientSetup.THROW_ITEM_KEY.get();
-        if (holdingThrow && (mc.screen != null || player.getInventory().getSelectedSlot() != throwSlot
+        if (holdingThrow && (mc.gui.screen() != null || player.getInventory().getSelectedSlot() != throwSlot
                 || !held.is(HammerRegistry.HAMMER.get()))) {
             ClientPacketDistributor.sendToServer(new ChargedThrowPayload(ChargedThrowPayload.CANCEL));
             holdingThrow = false;
         }
         while (key.consumeClick()) {
             if (held.is(HammerRegistry.HAMMER.get())) {
-                if (mc.screen == null && !holdingThrow && held.has(HammerRegistry.THROWABLE_ABILITY)) {
+                if (mc.gui.screen() == null && !holdingThrow && held.has(HammerRegistry.THROWABLE_ABILITY)) {
                     holdingThrow = true;
                     throwSlot = player.getInventory().getSelectedSlot();
                     ClientPacketDistributor.sendToServer(new ChargedThrowPayload(ChargedThrowPayload.PRESS));
                 }
             } else if (held.has(HammerRegistry.THROWABLE_ABILITY)) {
-                player.swing(InteractionHand.MAIN_HAND);
+                player.swing(InteractionHand.MAIN_HAND, held.getAttackAnimation(), false);
                 ClientPacketDistributor.sendToServer(new ThrowItemPayload(true));
             }
         }
         if (holdingThrow && !key.isDown()) {
             holdingThrow = false;
-            player.swing(InteractionHand.MAIN_HAND);
+            player.swing(InteractionHand.MAIN_HAND, held.getAttackAnimation(), false);
             ClientPacketDistributor.sendToServer(new ChargedThrowPayload(ChargedThrowPayload.RELEASE));
         }
     }
@@ -77,7 +77,7 @@ public class KeyInputEvents {
 
     private static void updatePrecision(Minecraft mc) {
         if (mc.player == null || mc.getConnection() == null) return;
-        boolean held = mc.screen == null && ClientSetup.PRECISION_MINING_KEY.get().isDown()
+        boolean held = mc.gui.screen() == null && ClientSetup.PRECISION_MINING_KEY.get().isDown()
                 && mc.player.getMainHandItem().has(HammerRegistry.MULTI_BLOCK_MINING);
         // A new local player must also initialize its server state after respawn or a level change.
         if (Boolean.valueOf(held).equals(mc.player.getExistingDataOrNull(HammerRegistry.PRECISION_MINING))) return;
@@ -111,7 +111,7 @@ public class KeyInputEvents {
         while (ClientSetup.HAMMER_CONFIG_KEY.get().consumeClick()) {
             // Component-based check - works with any item that has TOOL_CONFIG
             if (itemStack.has(HammerRegistry.TOOL_CONFIG)) {
-                mc.setScreen(new ToolConfigScreen());
+                mc.gui.setScreen(new ToolConfigScreen());
             }
         }
         updateThrowKey(mc, itemStack);
@@ -122,8 +122,8 @@ public class KeyInputEvents {
             }
         }
         while (ClientSetup.HAMMER_ACTION_WHEEL_KEY.get().consumeClick()) {
-            if (mc.screen == null && itemStack.has(HammerRegistry.HAMMER_ACTION)) {
-                mc.setScreen(new HammerActionWheel(player.getInventory().getSelectedSlot(), itemStack));
+            if (mc.gui.screen() == null && itemStack.has(HammerRegistry.HAMMER_ACTION)) {
+                mc.gui.setScreen(new HammerActionWheel(player.getInventory().getSelectedSlot(), itemStack));
             }
         }
     }

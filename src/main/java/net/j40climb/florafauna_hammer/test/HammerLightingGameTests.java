@@ -25,6 +25,7 @@ import net.neoforged.bus.api.EventPriority;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.level.block.BreakBlockEvent;
 
 import java.util.HashMap;
 import java.util.function.Consumer;
@@ -121,7 +122,7 @@ final class HammerLightingGameTests {
             case "bright" -> fill(player, c.north().above(), c.east(4).north().above(), Blocks.GLOWSTONE);
         }
         int supply = count(player);
-        Consumer<BlockEvent.BreakEvent> denyBreak = e -> {
+        Consumer<BreakBlockEvent> denyBreak = e -> {
             if (e.getPlayer() == player && e.getPos().equals(c)) e.setCanceled(true);
         };
         boolean[] attempted = {false};
@@ -132,7 +133,7 @@ final class HammerLightingGameTests {
             }
         };
         h.runAfterDelay(8, () -> {
-            if (condition.equals("cancel_center")) NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, BlockEvent.BreakEvent.class, denyBreak);
+            if (condition.equals("cancel_center")) NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, BreakBlockEvent.class, denyBreak);
             if (condition.equals("cancel_place")) NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, BlockEvent.EntityPlaceEvent.class, denyPlace);
             try {
                 swing(player, c, condition.equals("vertical") ? Direction.UP : Direction.WEST, Direction.EAST);

@@ -1,14 +1,14 @@
 # FloraFauna Hammer
 
-A standalone NeoForge mod for Minecraft 26.1 and Java 25. Find the Hammer in Tools & Utilities or use `/give @s florafauna:hammer`. Existing Hammer items, ability components and projectiles keep their original identifiers. The split FloraFauna mod (0.0.2 or later) is optional.
+A standalone NeoForge mod for Minecraft 26.3 and Java 25. Find the Hammer in Tools & Utilities or use `/give @s florafauna:hammer`. Existing Hammer items, ability components and projectiles keep their original identifiers. The split FloraFauna mod (0.0.2 or later) is optional.
 
 ## Build and test
 
-Run `./gradlew build runGameTestServer` from this checkout. The jar is `build/libs/florafauna_hammer-0.0.1+26.1.jar`. The same command works with `gradlew.bat` on Windows. Models and tool tags are included in source.
+Run `./gradlew build runGameTestServer` from this checkout. The jar is `build/libs/florafauna_hammer-0.0.1+26.3.jar`. The same command works with `gradlew.bat` on Windows. Models and tool tags are included in source.
 
 Use `./gradlew test` for the world-free JUnit suite or `./gradlew "-PgameTestFilter=florafauna_hammer:hammer_tunnel_gaps" runGameTestServer` for one server scenario. With PowerShell 7, run `./scripts/test_hammer.ps1 -SourceWorld <closed-save-directory>` for two real client phases, including save and reload. The runner copies the source world and keeps its logs and screenshots under `.tmp/world-playtests/`.
 
-For a sibling Gradle build add `includeBuild('../florafauna-hammer')` to settings and depend on `net.j40climb.florafauna_hammer:florafauna_hammer:0.0.1+26.1`. Select the matching Minecraft branch when building. Server and client both need the same mod version.
+For a sibling Gradle build add `includeBuild('../florafauna-hammer')` to settings and depend on `net.j40climb.florafauna_hammer:florafauna_hammer:0.0.1+26.3`. Select the matching Minecraft branch when building. Server and client both need the same mod version.
 
 Run `/florafauna ability` with a subcommand (`lightning`, `teleport`, `throw`, `mining`, `config`, `all` or `clear`) to edit the held item in creative mode or with game master permissions.
 
@@ -134,7 +134,7 @@ The `MULTI_TOOL_ABILITY` component enables tool modifications on right-click:
 
 **Priority**: Multi-tool actions take priority over `RIGHT_CLICK_ACTION`. If a block can be modified (stripped, pathed, or tilled), only that action occurs. Otherwise, the right-click ability executes.
 
-**Note**: The multi-tool ability requires the item to override `canPerformAction()` to declare support for the tool actions. Currently only `HammerItem` implements this - other items with the component will not perform tool modifications until they add the override.
+Items with the component use the registered vanilla block transformers. The strip setting works on logs, wood and bamboo blocks. With the separate FloraFauna mod installed, its driftwood uses the same data map and keeps its pillar axis when stripped.
 
 ## Adding Abilities to Items
 

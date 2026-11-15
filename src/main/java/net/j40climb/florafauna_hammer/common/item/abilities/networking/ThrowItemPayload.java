@@ -83,6 +83,7 @@ public record ThrowItemPayload(boolean mainHand) implements CustomPacketPayload 
 
         // Add entity to world
         if (!level.addFreshEntity(entity)) return;
+        player.swing(hand, stack.getAttackAnimation(), false);
 
         // Play throw sound
         level.playSound(null, player.getX(), player.getY(), player.getZ(),

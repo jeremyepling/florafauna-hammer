@@ -21,6 +21,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.item.Items;
@@ -36,7 +37,7 @@ import net.neoforged.bus.api.EventPriority;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.util.FakePlayer;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
-import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.level.block.BreakBlockEvent;
 
 import java.util.HashMap;
 import java.util.List;
@@ -221,7 +222,7 @@ final class HammerMiningGameTests {
             swing(player, center, Direction.UP, Direction.SOUTH);
             check(h, center, Blocks.AIR, "ore center");
             check(h, center.east(), Blocks.AIR, "ore neighbor");
-            var bounds = new AABB(center.getCenter(), center.east().getCenter()).inflate(2);
+            var bounds = new AABB(Vec3.atCenterOf(center), Vec3.atCenterOf(center.east())).inflate(2);
             var drops = h.getLevel().getEntitiesOfClass(ItemEntity.class, bounds);
             int count = 0;
             for (var drop : drops) {
@@ -337,7 +338,7 @@ final class HammerMiningGameTests {
         check(h, center.east(2), Blocks.IRON_ORE, "mixed vein respects two-block cap");
 
         configure(player, MiningShape.SHAPELESS);
-        for (var entry : Map.of(Blocks.NETHER_GOLD_ORE, Blocks.GOLD_ORE, Blocks.WHITE_WOOL, Blocks.BLACK_WOOL).entrySet()) {
+        for (var entry : Map.of(Blocks.NETHER_GOLD_ORE, Blocks.GOLD_ORE, Blocks.WOOL.pick(DyeColor.WHITE), Blocks.WOOL.pick(DyeColor.BLACK)).entrySet()) {
             set(player, center, entry.getKey());
             set(player, center.west(), entry.getKey());
             set(player, center.east(), entry.getValue());
@@ -438,10 +439,10 @@ final class HammerMiningGameTests {
         var player = player(h, MiningShape.FLAT_3X3);
         var center = h.absolutePos(new BlockPos(8, 12, 8));
         fill(player, center.offset(-1, -1, -1), center.offset(1, 1, 1), Blocks.STONE);
-        Consumer<BlockEvent.BreakEvent> cancel = event -> {
+        Consumer<BreakBlockEvent> cancel = event -> {
             if (event.getPlayer() == player && event.getPos().equals(center)) event.setCanceled(true);
         };
-        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, BlockEvent.BreakEvent.class, cancel);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, BreakBlockEvent.class, cancel);
         try {
             swing(player, center, Direction.UP, Direction.NORTH);
         } finally {
@@ -452,10 +453,10 @@ final class HammerMiningGameTests {
         }
 
         var protectedPos = center.west();
-        Consumer<BlockEvent.BreakEvent> protect = event -> {
+        Consumer<BreakBlockEvent> protect = event -> {
             if (event.getPlayer() == player && event.getPos().equals(protectedPos)) event.setCanceled(true);
         };
-        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, BlockEvent.BreakEvent.class, protect);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, BreakBlockEvent.class, protect);
         var border = player.level().getWorldBorder();
         double x = border.getCenterX(), z = border.getCenterZ(), size = border.getSize();
         try {

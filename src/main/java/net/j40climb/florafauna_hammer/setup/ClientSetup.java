@@ -10,7 +10,6 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.settings.KeyConflictContext;
 import net.neoforged.neoforge.common.util.Lazy;
-import org.lwjgl.glfw.GLFW;
 
 public final class ClientSetup {
 
@@ -20,56 +19,56 @@ public final class ClientSetup {
     public static final Lazy<KeyMapping> SUMMON_LIGHTNING_KEY = Lazy.of(() -> new KeyMapping(
             "key.florafauna.summon_lightning",
             KeyConflictContext.IN_GAME,
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_R,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_R,
             KEY_CATEGORY
     ));
 
     public static final Lazy<KeyMapping> TELEPORT_SURFACE_KEY = Lazy.of(() -> new KeyMapping(
             "key.florafauna.teleport_surface",
             KeyConflictContext.IN_GAME,
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_M,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_M,
             KEY_CATEGORY
     ));
 
     public static final Lazy<KeyMapping> HAMMER_CONFIG_KEY = Lazy.of(() -> new KeyMapping(
             "key.florafauna.hammer_config",
             KeyConflictContext.IN_GAME,
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_P,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_P,
             KEY_CATEGORY
     ));
 
     public static final Lazy<KeyMapping> THROW_ITEM_KEY = Lazy.of(() -> new KeyMapping(
             "key.florafauna.throw_item",
             KeyConflictContext.IN_GAME,
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_T,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_T,
             KEY_CATEGORY
     ));
 
     public static final Lazy<KeyMapping> CYCLE_MINING_MODE_KEY = Lazy.of(() -> new KeyMapping(
             "key.florafauna.cycle_mining_mode",
             KeyConflictContext.IN_GAME,
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_C,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_C,
             KEY_CATEGORY
     ));
 
     public static final Lazy<KeyMapping> PRECISION_MINING_KEY = Lazy.of(() -> new KeyMapping(
             "key.florafauna.precision_mining",
             KeyConflictContext.IN_GAME,
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_J,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_J,
             KEY_CATEGORY
     ));
 
     public static final Lazy<KeyMapping> HAMMER_ACTION_WHEEL_KEY = Lazy.of(() -> new KeyMapping(
             "key.florafauna.hammer_action_wheel",
             KeyConflictContext.IN_GAME,
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_K,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_K,
             KEY_CATEGORY
     ));
 

@@ -57,7 +57,8 @@ public final class Playtest {
             }
             return true;
         });
-        HammerPlaytest.steps(this, phase);
+        if ("stair-outline".equals(scenario)) HammerStairOutlinePlaytest.steps(this);
+        else HammerPlaytest.steps(this, phase);
         deadline = System.nanoTime() + Duration.ofSeconds(90).toNanos();
     }
 

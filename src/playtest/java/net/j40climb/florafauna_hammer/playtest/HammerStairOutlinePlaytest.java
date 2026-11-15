@@ -34,7 +34,7 @@ final class HammerStairOutlinePlaytest {
                 p.level().setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
             }
             p.level().setBlockAndUpdate(WALL.north(3).below(), Blocks.STONE.defaultBlockState());
-            p.level().setBlockAndUpdate(WALL, Blocks.OBSIDIAN.defaultBlockState());
+            p.level().setBlockAndUpdate(WALL, Blocks.DEEPSLATE.defaultBlockState());
             var hammer = new ItemStack(HammerRegistry.HAMMER.get());
             hammer.set(HammerRegistry.MULTI_BLOCK_MINING, new MiningModeData(MiningShape.TUNNEL_DOWN, 0, 64, true));
             hammer.set(HammerRegistry.TOOL_CONFIG, new ToolConfig(true, false, MiningSpeed.STANDARD));

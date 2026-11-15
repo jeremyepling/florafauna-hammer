@@ -19,6 +19,7 @@ import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
@@ -28,6 +29,7 @@ import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LiquidBlock;
+import net.minecraft.world.level.block.ObserverBlock;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.properties.Half;
 import net.minecraft.world.phys.AABB;
@@ -60,6 +62,8 @@ final class HammerMiningGameTests {
         HammerGameTests.registerStructureTest(event, env, "hammer_vein_exact_and_boundaries", MINE, 100, HammerMiningGameTests::veinBoundaries);
         HammerLightingGameTests.register(event, env, MINE);
         HammerGameTests.registerStructureTest(event, env, "hammer_tunnel_gaps", MINE, 100, HammerMiningGameTests::gaps);
+        HammerGameTests.registerStructureTest(event, env, "hammer_stair_player_collision", MINE, 100, HammerMiningGameTests::stairPlayerCollision);
+        HammerGameTests.registerStructureTest(event, env, "hammer_stair_canceled_placement", MINE, 100, HammerMiningGameTests::stairCanceledPlacement);
         HammerGameTests.registerStructureTest(event, env, "hammer_lava_exposure", MINE, 100, HammerMiningGameTests::lavaExposure);
         HammerGameTests.registerStructureTest(event, env, "hammer_dimension_floor", MINE, 100, HammerMiningGameTests::buildFloor);
         HammerGameTests.registerStructureTest(event, env, "hammer_precision_is_per_player", MINE, 100, HammerMiningGameTests::precision);
@@ -432,6 +436,68 @@ final class HammerMiningGameTests {
             check(h, center.east(5), Blocks.STONE, "swing ends at its normal reach");
         }
         h.succeed();
+    }
+
+    private static BlockPos prepareDescendingGap(GameTestHelper h, ServerPlayer miner) {
+        BlockPos center = h.absolutePos(new BlockPos(5, 17, 12));
+        fill(miner, center.offset(-1, -7, -1), center.offset(5, 4, 1), Blocks.AIR);
+        set(miner, center, Blocks.STONE);
+        return center;
+    }
+
+    private static void stairPlayerCollision(GameTestHelper h) {
+        var miner = player(h, MiningShape.TUNNEL_DOWN);
+        BlockPos center = prepareDescendingGap(h, miner);
+        BlockPos occupied = center.east().below(3);
+        var occupant = new FakePlayer(h.getLevel(), new GameProfile(UUID.randomUUID(), "stair-occupant"));
+        occupant.setPos(Vec3.atBottomCenterOf(occupied));
+        h.getLevel().addNewPlayer(occupant);
+        try {
+            h.assertTrue(h.getLevel().getEntitiesOfClass(ServerPlayer.class, new AABB(occupied)).contains(occupant),
+                    "Second player must occupy the planned tread");
+            swing(miner, center, Direction.WEST, Direction.EAST);
+            check(h, occupied, Blocks.AIR, "stair inside another player");
+            stair(h, occupied.east().below(), Direction.WEST);
+        } finally {
+            h.getLevel().removePlayerImmediately(occupant, Entity.RemovalReason.DISCARDED);
+        }
+        h.succeed();
+    }
+
+    private static void stairCanceledPlacement(GameTestHelper h) {
+        var miner = player(h, MiningShape.TUNNEL_DOWN);
+        BlockPos center = prepareDescendingGap(h, miner);
+        BlockPos denied = center.east().below(3);
+        BlockPos allowed = denied.east().below();
+        var level = h.getLevel();
+        var observer = Blocks.OBSERVER.defaultBlockState().setValue(ObserverBlock.FACING, Direction.SOUTH);
+        level.setBlock(denied.north(), observer, Block.UPDATE_ALL);
+        level.setBlock(allowed.north(), observer, Block.UPDATE_ALL);
+        boolean[] attempted = {false};
+        Consumer<BlockEvent.EntityPlaceEvent> veto = e -> {
+            if (e.getEntity() == miner && e.getPos().equals(denied) && e.getPlacedBlock().is(Blocks.COBBLESTONE_STAIRS)) {
+                attempted[0] = true;
+                e.setCanceled(true);
+            }
+        };
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, BlockEvent.EntityPlaceEvent.class, veto);
+        try {
+            swing(miner, center, Direction.WEST, Direction.EAST);
+        } finally {
+            NeoForge.EVENT_BUS.unregister(veto);
+        }
+        h.assertTrue(attempted[0], "Placement hook must see the proposed gap stair");
+        check(h, denied, Blocks.AIR, "vetoed tread");
+        stair(h, allowed, Direction.WEST);
+        h.assertTrue(!level.getBlockTicks().hasScheduledTick(denied.north(), Blocks.OBSERVER),
+                "Vetoed stair scheduled an observer pulse");
+        h.assertTrue(level.getBlockTicks().hasScheduledTick(allowed.north(), Blocks.OBSERVER),
+                "Accepted stair should notify the observer watching it");
+        h.runAfterDelay(2, () -> {
+            h.assertTrue(!level.getBlockState(denied.north()).getValue(ObserverBlock.POWERED),
+                    "Observer powered after a vetoed stair");
+            h.succeed();
+        });
     }
 
     private static void eligibility(GameTestHelper h) {

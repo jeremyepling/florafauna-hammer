@@ -44,7 +44,7 @@ try {
             throw 'Source save changed during the copy.'
         }
         Set-Content -LiteralPath (Join-Path $gameDir '.florafauna-playtest') -Value 'hammer'
-        $gameOptions = @('version:4786','pauseOnLostFocus:false','key_key.florafauna.throw_item:key.keyboard.comma','skipMultiplayerWarning:true','onboardAccessibility:false','tutorialStep:none','autoJump:false','renderDistance:4','simulationDistance:4')
+        $gameOptions = @('version:4786','pauseOnLostFocus:false','key_key.florafauna.throw_item:key.keyboard.comma','skipMultiplayerWarning:true','onboardAccessibility:false','tutorialStep:none','autoJump:false','renderDistance:4','simulationDistance:5')
         $gameOptions | Set-Content -LiteralPath (Join-Path $gameDir 'options.txt')
     } finally { if ($lock) { $lock.Dispose() } }
 

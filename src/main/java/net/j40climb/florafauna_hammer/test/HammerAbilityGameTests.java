@@ -1,6 +1,8 @@
 package net.j40climb.florafauna_hammer.test;
 
+import com.google.gson.JsonParser;
 import com.mojang.authlib.GameProfile;
+import com.mojang.serialization.JsonOps;
 import net.j40climb.florafauna_hammer.common.item.abilities.RightClickActionHandler;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.HammerAction;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningModeData;
@@ -20,6 +22,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.TestEnvironmentDefinition;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntitySpawnReason;
@@ -44,6 +47,7 @@ import java.util.function.Consumer;
 
 final class HammerAbilityGameTests {
     static void register(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> env) {
+        HammerGameTests.registerTest(event, env, "hammer_legacy_saved_stack", HammerAbilityGameTests::legacySavedStack);
         HammerGameTests.registerTest(event, env, "hammer_fresh_and_configured_loot", HammerAbilityGameTests::checkConfigurations);
         HammerGameTests.registerTest(event, env, "hammer_action_wheel_dispatch", HammerAbilityGameTests::checkWheel);
         HammerGameTests.registerTest(event, env, "hammer_throw_single_item_and_reload", HammerAbilityGameTests::checkThrow);
@@ -56,6 +60,28 @@ final class HammerAbilityGameTests {
         player.setPos(helper.absolutePos(new BlockPos(1, 2, 1)).getCenter());
         player.setOnGround(true);
         return player;
+    }
+
+    private static void legacySavedStack(GameTestHelper helper) {
+        // This represents an inventory stack saved before Hammer became its own mod.
+        var saved = JsonParser.parseString("""
+                {"id":"florafauna:hammer", "count":1, "components":{
+                  "florafauna:hammer_charge":17, "florafauna:hammer_action":"strip",
+                  "florafauna:multi_block_mining":{"shape":"stairs_down","radius":0,"maxBlocksToBreak":24},
+                  "florafauna:tool_config":{"fortune":false,"silkTouch":true,"miningSpeed":"standard"}
+                }}
+                """);
+        var ops = helper.getLevel().registryAccess().createSerializationContext(JsonOps.INSTANCE);
+        ItemStack stack = ItemStack.CODEC.parse(ops, saved).getOrThrow();
+        helper.assertTrue(stack.is(HammerRegistry.HAMMER.get()) && stack.get(HammerRegistry.HAMMER_CHARGE) == 17
+                && stack.get(HammerRegistry.HAMMER_ACTION) == HammerAction.STRIP, "Saved Hammer lost its identity, charge or action");
+        var mode = stack.get(HammerRegistry.MULTI_BLOCK_MINING);
+        helper.assertTrue(mode.shape() == MiningShape.TUNNEL_DOWN && mode.maxBlocksToBreak() == 24
+                && stack.get(HammerRegistry.TOOL_CONFIG).equals(new ToolConfig(false, true, MiningSpeed.STANDARD)),
+                "Legacy mining settings did not decode with their original defaults");
+        helper.assertTrue(stack.is(ItemTags.AXES) && stack.is(ItemTags.HOES) && stack.is(ItemTags.SHOVELS)
+                && stack.is(ItemTags.PICKAXES), "The installed Hammer must belong to all four tool tags");
+        helper.succeed();
     }
 
     private static void checkWheel(GameTestHelper helper) {

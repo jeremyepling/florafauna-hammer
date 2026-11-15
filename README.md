@@ -1,4 +1,4 @@
-# FloraFauna Hammer
+# Hammer
 
 A standalone NeoForge mod for Minecraft 26.3 and Java 25. Find the Hammer in Tools & Utilities or use `/give @s florafauna:hammer`. Existing Hammer items, ability components and projectiles keep their original identifiers. The split FloraFauna mod (0.0.2 or later) is optional.
 
@@ -8,7 +8,7 @@ Run `./gradlew build runGameTestServer` from this checkout. The jar is `build/li
 
 Use `./gradlew test` for the world-free JUnit suite or `./gradlew "-PgameTestFilter=florafauna_hammer:hammer_tunnel_gaps" runGameTestServer` for one server scenario. With PowerShell 7, run `./scripts/test_hammer.ps1 -SourceWorld <closed-save-directory>` for two real client phases, including save and reload. The runner copies the source world and keeps its logs and screenshots under `.tmp/world-playtests/`.
 
-For a sibling Gradle build add `includeBuild('../florafauna-hammer')` to settings and depend on `net.j40climb.florafauna_hammer:florafauna_hammer:0.0.1+26.3`. Select the matching Minecraft branch when building. Server and client both need the same mod version.
+For a sibling Gradle build add `includeBuild('../hammer')` to settings and depend on `net.j40climb.florafauna_hammer:florafauna_hammer:0.0.1+26.3`. Select the matching Minecraft branch when building. Server and client both need the same mod version.
 
 With FloraFauna, Hammer and Frenchies checked out side by side on matching versions, launch all three from the FloraFauna Stonecutter checkout with `.\gradlew.bat -PdevMods=all :26.3-neoforge:runClient`.
 

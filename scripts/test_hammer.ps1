@@ -20,7 +20,7 @@ if ((Get-Item -LiteralPath $world).Attributes.HasFlag([IO.FileAttributes]::Repar
         (Get-ChildItem -LiteralPath $world -Recurse -Force -Attributes ReparsePoint | Select-Object -First 1)) {
     throw 'Choose a self-contained save without symbolic links or junctions.'
 }
-$options = @('--console=plain', '--max-workers=4')
+$options = @('--console=plain')
 if ($Offline) { $options += '--offline' }
 $hash = (Get-FileHash -LiteralPath $level).Hash
 Write-Host "Source save: $world"

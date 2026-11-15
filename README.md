@@ -10,6 +10,8 @@ Use `./gradlew test` for the world-free JUnit suite or `./gradlew "-PgameTestFil
 
 For a sibling Gradle build add `includeBuild('../florafauna-hammer')` to settings and depend on `net.j40climb.florafauna_hammer:florafauna_hammer:0.0.1+26.3`. Select the matching Minecraft branch when building. Server and client both need the same mod version.
 
+With FloraFauna, Hammer and Frenchies checked out side by side on matching versions, launch all three from the FloraFauna Stonecutter checkout with `.\gradlew.bat -PdevMods=all :26.3-neoforge:runClient`.
+
 Run `/florafauna ability` with a subcommand (`lightning`, `teleport`, `throw`, `mining`, `config`, `all` or `clear`) to edit the held item in creative mode or with game master permissions.
 
 ## Data Components
@@ -30,16 +32,16 @@ Run `/florafauna ability` with a subcommand (`lightning`, `teleport`, `throw`, `
 
 | Shape | Pattern | Radius |
 |-------|---------|--------|
-| SINGLE | 1Ã—1 | 0 |
-| FLAT_3X3 | 3Ã—3 plane | 1 |
-| FLAT_5X5 | 5Ã—5 plane | 2 |
-| FLAT_7X7 | 7Ã—7 plane | 3 |
+| SINGLE | 1×1 | 0 |
+| FLAT_3X3 | 3×3 plane | 1 |
+| FLAT_5X5 | 5×5 plane | 2 |
+| FLAT_7X7 | 7×7 plane | 3 |
 | SHAPELESS | Vein mining | 1 |
 | TUNNEL_UP | Staircase up | 0 |
 | TUNNEL_DOWN | Staircase down | 0 |
-| WALKABLE_TUNNEL | 1 wide Ã— 3 high Ã— 5 deep | 0 |
-| LARGE_TUNNEL | 3 wide Ã— 3 high Ã— 5 deep | 0 |
-| BORE | 1 wide Ã— 1 high Ã— 7 deep | 0 |
+| WALKABLE_TUNNEL | 1 wide × 3 high × 5 deep | 0 |
+| LARGE_TUNNEL | 3 wide × 3 high × 5 deep | 0 |
+| BORE | 1 wide × 1 high × 7 deep | 0 |
 
 ## Mining Speed
 
@@ -87,7 +89,7 @@ When breaking a block with `MULTI_BLOCK_MINING` component:
 3. On break, destroy all blocks in pattern
 4. Collect drops through the normal player mining and loot callbacks. A canceled center break leaves all neighbors intact. Each extra block gets its own protection checks and break callback.
 
-Flat planes follow the original hit face. Shapeless mining follows matching blocks through faces, edges and corners and defaults to 64 blocks, including the center. Existing component values are bounded to a radius of 0â€“3 and a vein limit of 1â€“64.
+Flat planes follow the original hit face. Shapeless mining follows matching blocks through faces, edges and corners and defaults to 64 blocks, including the center. Existing component values are bounded to a radius of 0–3 and a vein limit of 1–64.
 
 Instabreak sets mining speed to 100. Block hardness still determines how long a strike takes.
 
@@ -97,13 +99,13 @@ Stair modes cut five columns with five blocks of clearance per column before pla
 
 Orange outlines mark the faces of planned mining blocks that touch source or flowing lava. Check the marked side, ceiling, floor or end wall before striking. Holding the single-block key narrows this warning to the targeted block. The warning leaves the final decision to the player.
 
-Shapeless mode groups matching stone and deepslate ore variants. An iron vein can cross the stoneâ€“deepslate boundary. Copper touching that vein stays in place. Select **Exact block** in the Hammer settings to stop at the variant boundary.
+Shapeless mode groups matching stone and deepslate ore variants. An iron vein can cross the stone–deepslate boundary. Copper touching that vein stays in place. Select **Exact block** in the Hammer settings to stop at the variant boundary.
 
 After a successful center hit, flat and tunnel swings skip air and continue through their usual footprint. Both stair directions place a cobblestone tread across an existing air gap at the planned floor height. The flight still ends at the fifth column. Vein mining follows matching neighbors within its configured radius.
 
 ## Tunnel Lighting
 
-Enable **Auto torches** in the held Hammerâ€™s settings (default **P**). After cutting a horizontal Walkable or Large Tunnel, or an ascending or descending staircase, it can place one regular torch on the right wall in the direction of travel. It checks the newly opened passage for light level 7 or below and a solid attachment. It uses the offhand torch stack first, then searches the inventory. Survival consumes one torch on successful placement. Creative requires a torch and keeps the stack.
+Enable **Auto torches** in the held Hammer’s settings (default **P**). After cutting a horizontal Walkable or Large Tunnel, or an ascending or descending staircase, it can place one regular torch on the right wall in the direction of travel. It checks the newly opened passage for light level 7 or below and a solid attachment. It uses the offhand torch stack first, then searches the inventory. Survival consumes one torch on successful placement. Creative requires a torch and keeps the stack.
 
 ## Charged Hammer Throw
 

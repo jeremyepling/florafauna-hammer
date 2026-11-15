@@ -130,7 +130,8 @@ public class ThrownItemEntity extends AbstractArrow {
             if (clientSideReturnTickCount++ == 0) {
                 playSound(SoundEvents.TRIDENT_RETURN, 10.0F, 1.0F);
             }
-            if (distanceTo(owner) < 1.5 && level() instanceof ServerLevel serverLevel) {
+            // A standing player catches at eye height as well as near their feet.
+            if (owner.getBoundingBox().distanceToSqr(position()) < 1.5 * 1.5 && level() instanceof ServerLevel serverLevel) {
                 if (pickup != Pickup.CREATIVE_ONLY) {
                     if (owner instanceof Player player) {
                         player.getInventory().placeItemBackInInventory(getThrownItem().copy(), Prediction.SERVER_ONLY);

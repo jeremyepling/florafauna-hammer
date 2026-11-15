@@ -161,7 +161,7 @@ final class ChargedHammerGameTests {
             restored.tick();
             h.assertTrue(p.level().isEmptyBlock(center) && p.level().isEmptyBlock(center.east()), "Reloaded charged throw did not strike the vein");
             h.assertTrue(HammerItem.charge(restored.getThrownItem()) == HammerItem.MAX_CHARGE - 2, "Projectile did not retain the debit");
-            restored.setPos(p.position());
+            restored.setPos(p.getEyePosition().add(0, 0, 0.5));
             restored.tick();
             h.assertTrue(restored.isRemoved() && p.getMainHandItem() == held, "Return displaced the current stack");
             int count = 0;

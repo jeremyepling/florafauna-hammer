@@ -66,6 +66,11 @@ public final class MultiBlockVisualFeedback {
         }
     }
 
+    static Direction previewFace(BlockPos pos, Direction hoveredFace) {
+        var gameMode = Minecraft.getInstance().gameMode;
+        return gameMode != null && gameMode.isDestroying() && pos.equals(target) ? hitFace : hoveredFace;
+    }
+
     private static void clear(Player player) {
         draw(player, -1);
         cracks = List.of();

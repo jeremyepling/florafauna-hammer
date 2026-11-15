@@ -59,7 +59,7 @@ neoForge {
                 gameDirectory = directory
                 programArguments.addAll '--width', '960', '--height', '540', '--quickPlaySingleplayer', 'playtest'
                 systemProperty 'florafauna.playtest.directory', directory.absolutePath
-                systemProperty 'florafauna.playtest.scenario', 'hammer'
+                systemProperty 'florafauna.playtest.scenario', providers.gradleProperty('playtestScenario').getOrElse('hammer')
                 systemProperty 'florafauna.playtest.phase', playtestPhase
             }
         }

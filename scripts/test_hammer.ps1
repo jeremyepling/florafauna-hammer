@@ -3,6 +3,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)] [string]$SourceWorld,
+    [ValidateSet('hammer','stair-outline')][string]$Scenario = 'hammer',
     [switch]$Offline
 )
 $ErrorActionPreference = 'Stop'
@@ -43,15 +44,16 @@ try {
         if ((Get-FileHash -LiteralPath (Join-Path $copy 'level.dat')).Hash -ne $hash) {
             throw 'Source save changed during the copy.'
         }
-        Set-Content -LiteralPath (Join-Path $gameDir '.florafauna-playtest') -Value 'hammer'
+        Set-Content -LiteralPath (Join-Path $gameDir '.florafauna-playtest') -Value $Scenario
         $gameOptions = @('version:5023','pauseOnLostFocus:false','key_key.florafauna.throw_item:key.keyboard.comma','skipMultiplayerWarning:true','onboardAccessibility:false','tutorialStep:none','autoJump:false','renderDistance:4','simulationDistance:5')
         $gameOptions | Set-Content -LiteralPath (Join-Path $gameDir 'options.txt')
     } finally { if ($lock) { $lock.Dispose() } }
 
-    foreach ($phase in 1, 2) {
+    $phases = if ($Scenario -eq 'stair-outline') { 1 } else { 1, 2 }
+    foreach ($phase in $phases) {
         Write-Host "Launching Hammer phase $phase ..."
         $log = Join-Path $gameDir "phase-$phase.log"
-        & .\gradlew.bat @options "-PplaytestId=$runId" "-PplaytestPhase=$phase" runWorldPlaytest *> $log
+        & .\gradlew.bat @options "-PplaytestId=$runId" "-PplaytestPhase=$phase" "-PplaytestScenario=$Scenario" runWorldPlaytest *> $log
         $resultPath = Join-Path $gameDir "phase-$phase.result"
         $result = if (Test-Path -LiteralPath $resultPath) { (Get-Content -Raw -LiteralPath $resultPath).Trim() } else { 'Missing client result' }
         if ($LASTEXITCODE -ne 0 -or $result -ne 'PASS') { throw "Hammer phase $phase failed: $result. See $log" }

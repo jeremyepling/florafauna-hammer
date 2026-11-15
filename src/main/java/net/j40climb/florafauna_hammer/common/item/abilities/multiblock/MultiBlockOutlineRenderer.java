@@ -47,6 +47,10 @@ public class MultiBlockOutlineRenderer {
         event.registerPipeline(PREVIEW_PIPELINE);
     }
 
+    public static MultiBlockPatterns.Plan previewPlan(Player player, BlockPos target, Direction hoveredFace) {
+        return MultiBlockPatterns.plan(player, player.getMainHandItem(), target, MultiBlockVisualFeedback.previewFace(target, hoveredFace));
+    }
+
     @SubscribeEvent
     public static void extractBlockOutlines(ExtractBlockOutlineRenderStateEvent event) {
         Player player = Minecraft.getInstance().player;
@@ -55,7 +59,7 @@ public class MultiBlockOutlineRenderer {
         }
 
         BlockPos target = event.getBlockPos();
-        var plan = MultiBlockPatterns.plan(player, player.getMainHandItem(), target, event.getHitResult().getDirection());
+        var plan = previewPlan(player, target, event.getHitResult().getDirection());
         List<VoxelShape> outlines = plan.blocks().stream()
                 .filter(pos -> !pos.equals(target))
                 .map(pos -> event.getLevel().getBlockState(pos)

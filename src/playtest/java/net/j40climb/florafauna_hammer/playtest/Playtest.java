@@ -69,7 +69,8 @@ public final class Playtest {
         });
         // The server ignores interaction packets until the client acknowledges the level load.
         awaitServer("Wait for the server to accept player input", player -> player.connection.hasClientLoaded());
-        HammerPlaytest.steps(this, phase);
+        if ("stair-outline".equals(scenario)) HammerStairOutlinePlaytest.steps(this);
+        else HammerPlaytest.steps(this, phase);
         deadline = System.nanoTime() + Duration.ofSeconds(90).toNanos();
     }
 

@@ -1,0 +1,123 @@
+package net.j40climb.florafauna_hammer.client.gui;
+
+import net.j40climb.florafauna_hammer.HammerMod;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+
+/** Background and content layout for the Hammer configuration screen. */
+public abstract class BaseScreen extends Screen {
+    // Default GUI texture with empty top area
+    protected static final Identifier DEFAULT_GUI_TEXTURE =
+            Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "textures/gui/base_gui.png");
+
+
+
+    // Standard Minecraft GUI dimensions
+    protected static final int IMAGE_WIDTH = 176;
+    protected static final int IMAGE_HEIGHT = 166;
+
+    // Content area bounds (area above inventory for custom content)
+    protected static final int CONTENT_X = 8;
+    protected static final int CONTENT_Y = 18;
+    protected static final int CONTENT_WIDTH = 160;
+    protected static final int CONTENT_HEIGHT = 166; // Space between title and inventory
+
+    // Title positioning
+    protected static final int TITLE_Y = 6;
+
+    // GUI texture to use (can be overridden by subclass)
+    protected final Identifier guiTexture;
+
+    // GUI position (calculated in init)
+    protected int leftPos;
+    protected int topPos;
+
+    /**
+     * Creates a screen with the default GUI texture.
+     *
+     * @param title the screen title
+     */
+    protected BaseScreen(Component title) {
+        this(title, DEFAULT_GUI_TEXTURE);
+    }
+
+    /**
+     * Creates a screen with a custom GUI texture.
+     *
+     * @param title the screen title
+     * @param guiTexture the texture to use (should be 176x166 with standard slot layout)
+     */
+    protected BaseScreen(Component title, Identifier guiTexture) {
+        super(title);
+        this.guiTexture = guiTexture;
+    }
+
+    @Override
+    protected void init() {
+        super.init();
+
+        // Center the GUI on screen
+        this.leftPos = (this.width - IMAGE_WIDTH) / 2;
+        this.topPos = (this.height - IMAGE_HEIGHT) / 2;
+
+        // Let subclasses add their widgets
+        initContent();
+    }
+
+    /**
+     * Called during init() to allow subclasses to add widgets and initialize content.
+     * The leftPos and topPos are already calculated when this is called.
+     */
+    protected abstract void initContent();
+
+    @Override
+    public void extractBackground(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+        // 1. Render blurred background
+        super.extractBackground(guiGraphics, mouseX, mouseY, partialTick);
+
+        // 2. Render the GUI texture
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, guiTexture, leftPos, topPos, 0, 0, IMAGE_WIDTH, IMAGE_HEIGHT, 256, 256);
+    }
+
+    @Override
+    public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+        // 1. Render background and widgets
+        super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
+
+        // 2. Let subclass render custom content (including title)
+        renderContent(guiGraphics, mouseX, mouseY, partialTick);
+    }
+
+    /**
+     * Called during extractRenderState() to allow subclasses to render custom content in the content area.
+     * This is called after the title but before the inventory.
+     *
+     * @param guiGraphics the graphics context
+     * @param mouseX mouse X position
+     * @param mouseY mouse Y position
+     * @param partialTick partial tick time
+     */
+    protected abstract void renderContent(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick);
+
+    @Override
+    public boolean isPauseScreen() {
+        return false;
+    }
+
+    /**
+     * Gets the X position for content relative to the GUI.
+     */
+    protected int getContentX() {
+        return leftPos + CONTENT_X;
+    }
+
+    /**
+     * Gets the Y position for content relative to the GUI.
+     */
+    protected int getContentY() {
+        return topPos + CONTENT_Y;
+    }
+}

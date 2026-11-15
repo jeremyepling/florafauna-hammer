@@ -1,0 +1,84 @@
+import java.time.Duration
+
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+    id 'net.neoforged.moddev' version '2.0.148'
+}
+
+group = 'net.j40climb.florafauna_hammer'
+version = "0.0.1+${minecraft_version}"
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
+repositories { mavenCentral() }
+
+sourceSets.create('playtest') {
+    compileClasspath += sourceSets.main.compileClasspath + sourceSets.main.output
+    runtimeClasspath += sourceSets.main.runtimeClasspath
+}
+sourceSets.test {
+    compileClasspath += sourceSets.main.compileClasspath
+    runtimeClasspath += sourceSets.main.runtimeClasspath
+}
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter:6.1.3'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('jar') { from 'LICENSE.txt' }
+tasks.named('test') { useJUnitPlatform() }
+tasks.named('check') { dependsOn 'compilePlaytestJava' }
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
+
+def playtestId = providers.gradleProperty('playtestId').orNull
+def playtestPhase = providers.gradleProperty('playtestPhase').orNull
+if (playtestId && (!(playtestId ==~ /[0-9a-f]{32}/) || !(playtestPhase in ['1', '2']))) {
+    throw new GradleException('Use scripts/test_hammer.ps1 to prepare an isolated client playtest.')
+}
+neoForge {
+    version = neo_version
+    runs {
+        client {
+            client()
+            gameDirectory = file('run/client')
+        }
+        server {
+            server()
+            gameDirectory = file('run/server')
+            programArgument '--nogui'
+        }
+        gameTestServer {
+            type = 'gameTestServer'
+            gameDirectory = file('run/gameTestServer')
+            systemProperty 'neoforge.enabledGameTestNamespaces', 'florafauna_hammer'
+            programArguments.addAll '--tests', providers.gradleProperty('gameTestFilter').getOrElse('florafauna_hammer:*')
+        }
+        if (playtestId) {
+            worldPlaytest {
+                client()
+                def directory = file(".tmp/world-playtests/${playtestId}/hammer")
+                gameDirectory = directory
+                programArguments.addAll '--width', '960', '--height', '540', '--quickPlaySingleplayer', 'playtest'
+                systemProperty 'florafauna.playtest.directory', directory.absolutePath
+                systemProperty 'florafauna.playtest.scenario', 'hammer'
+                systemProperty 'florafauna.playtest.phase', playtestPhase
+            }
+        }
+    }
+    mods {
+        florafauna_hammer {
+            sourceSet sourceSets.main
+            if (playtestId) sourceSet sourceSets.playtest
+        }
+    }
+}
+tasks.matching { it.name == 'runWorldPlaytest' }.configureEach { timeout = Duration.ofMinutes(4) }
+
+processResources {
+    def metadata = [version: project.version, minecraft_version_range: minecraft_version_range, neo_version_range: neo_version_range]
+    inputs.properties metadata
+    filesMatching('META-INF/neoforge.mods.toml') { expand metadata }
+}
+
+publishing {
+    publications { mavenJava(MavenPublication) { from components.java } }
+}

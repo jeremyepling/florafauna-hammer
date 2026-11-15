@@ -1,0 +1,11 @@
+.gradle/
+.gradle-build-cache/
+build/
+run/
+.tmp/
+logs/
+.idea/
+*.iml
+.vscode/
+bin/
+out/

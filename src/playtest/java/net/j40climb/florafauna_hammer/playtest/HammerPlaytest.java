@@ -5,7 +5,7 @@ import net.j40climb.florafauna_hammer.common.item.abilities.data.MultiToolAbilit
 import net.j40climb.florafauna_hammer.common.item.abilities.data.RightClickAction;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningShape;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningSpeed;
-import net.j40climb.florafauna_hammer.common.item.abilities.menu.ToolConfigScreen;
+import net.j40climb.florafauna_hammer.common.item.abilities.menu.HammerMenuScreen;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.UpdateToolConfigPayload;
 import net.j40climb.florafauna_hammer.setup.ClientSetup;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
@@ -73,9 +73,8 @@ public final class HammerPlaytest {
             mc.player.getInventory().setSelectedSlot(0);
             mc.options.setCameraType(CameraType.FIRST_PERSON);
             mc.options.hideGui = false;
-            KeyMapping.click(ClientSetup.HAMMER_CONFIG_KEY.get().getKey());
         });
-        t.awaitClient("Open the tool configuration screen", mc -> mc.screen instanceof ToolConfigScreen);
+        openMenu(t, "settings");
         t.client("Click the speed control to switch from Efficiency to Instabreak", mc -> {
             clickConfigButton(mc, "speed.efficiency");
             mc.screen.onClose();
@@ -84,8 +83,7 @@ public final class HammerPlaytest {
                 p.getMainHandItem().get(HammerRegistry.TOOL_CONFIG).miningSpeed() == MiningSpeed.INSTABREAK);
         t.awaitClient("Synchronize the server's tool configuration back to the client", mc ->
                 mc.player.getMainHandItem().get(HammerRegistry.TOOL_CONFIG).miningSpeed() == MiningSpeed.INSTABREAK);
-        t.client("Press the menu key again", mc -> KeyMapping.click(ClientSetup.HAMMER_CONFIG_KEY.get().getKey()));
-        t.awaitClient("Reopen the tool configuration screen", mc -> mc.screen instanceof ToolConfigScreen);
+        openMenu(t, "settings");
         t.client("Verify the persisted speed label and press Cycle Mining Mode", mc -> {
             configButton(mc, "speed.instabreak");
             mc.screen.onClose();
@@ -99,7 +97,7 @@ public final class HammerPlaytest {
         setLighting(t, true);
         setLighting(t, false);
         interruptSwing(t);
-        HammerPrecisionPlaytest.steps(t, WALL);
+        HammerSinglePlaytest.steps(t, WALL);
         minePlane(t, WALL, Direction.NORTH, "wall");
         minePlane(t, FLOOR, Direction.UP, "floor");
 
@@ -132,15 +130,14 @@ public final class HammerPlaytest {
                 MultiToolAbilityData.DEFAULT, Blocks.DIRT_PATH.defaultBlockState());
         checkTransform(t, "Till dirt when flattening is disabled", Blocks.DIRT.defaultBlockState(),
                 MultiToolAbilityData.DEFAULT.withFlatten(false), Blocks.FARMLAND.defaultBlockState());
-        HammerActionWheelPlaytest.steps(t, WALL);
+        HammerMenuPlaytest.steps(t, WALL);
         HammerQuarryPlaytest.start(t);
     }
 
     private static void setVeinPreference(Playtest t, boolean exact) {
         String current = exact ? "vein.same_ore" : "vein.exact";
         String next = exact ? "vein.exact" : "vein.same_ore";
-        t.client("Press the menu key to change vein matching", mc -> KeyMapping.click(ClientSetup.HAMMER_CONFIG_KEY.get().getKey()));
-        t.awaitClient("Open the vein matching control", mc -> mc.screen instanceof ToolConfigScreen);
+        openMenu(t, "settings");
         t.client("Click the vein matching control to select " + next, mc -> {
             clickConfigButton(mc, current);
             configButton(mc, next);
@@ -155,8 +152,7 @@ public final class HammerPlaytest {
     private static void setLighting(Playtest t, boolean enable) {
         String current = enable ? "lighting.off" : "lighting.on";
         String next = enable ? "lighting.on" : "lighting.off";
-        t.client("Press the tool menu key to change auto torches", mc -> KeyMapping.click(ClientSetup.HAMMER_CONFIG_KEY.get().getKey()));
-        t.awaitClient("Open the tunnel lighting control", mc -> mc.screen instanceof ToolConfigScreen);
+        openMenu(t, "settings");
         t.client("Click the auto torches control to select " + next, mc -> {
             clickConfigButton(mc, current);
             configButton(mc, next);
@@ -181,17 +177,8 @@ public final class HammerPlaytest {
         for (int x = -1; x <= 1; x++) {
             for (int y = -1; y <= 1; y++) expected.add(WALL.offset(x, y, 0));
         }
-        t.awaitClient("Render cracks at all nine target positions, then hold precision", mc -> {
-            if (!cracks.equals(expected)) return false;
-            ClientSetup.PRECISION_MINING_KEY.get().setDown(true);
-            return true;
-        });
-        t.awaitClient("Hold precision mid-swing and show the center crack alone", mc -> {
-            if (!cracks.equals(Set.of(WALL))) return false;
-            mc.options.keyAttack.setDown(false);
-            ClientSetup.PRECISION_MINING_KEY.get().setDown(false);
-            return true;
-        });
+        t.awaitClient("Render cracks at all nine target positions", mc -> cracks.equals(expected));
+        t.client("Interrupt the swing", mc -> mc.options.keyAttack.setDown(false));
         t.awaitClient("Clear all cracks when the swing is interrupted", mc -> !mc.gameMode.isDestroying() && cracks.isEmpty());
         t.client("Finish observing the interrupted swing", mc -> observingCracks = false);
         t.server("Verify every block survived the interrupted swing", p -> {
@@ -245,16 +232,32 @@ public final class HammerPlaytest {
         player.inventoryMenu.broadcastChanges();
     }
 
+    static void openMenu(Playtest t, String tab) {
+        t.client("Hold C to open " + tab, mc -> ClientSetup.CYCLE_MINING_MODE_KEY.get().setDown(true));
+        t.awaitClient("Show the unified Hammer menu", mc -> mc.screen instanceof HammerMenuScreen);
+        t.client("Release C and select " + tab, mc -> {
+            ClientSetup.CYCLE_MINING_MODE_KEY.get().setDown(false);
+            click(mc, button(mc, Component.translatable("gui.florafauna.hammer_menu." + tab)));
+        });
+    }
+
     private static void clickConfigButton(Minecraft mc, String setting) {
-        Button button = configButton(mc, setting);
+        click(mc, configButton(mc, setting));
+    }
+
+    static void click(Minecraft mc, Button button) {
         var click = new MouseButtonEvent(button.getX() + button.getWidth() / 2.0,
                 button.getY() + button.getHeight() / 2.0, new MouseButtonInfo(0, 0));
-        Playtest.require(mc.screen.mouseClicked(click, false), "Button click was ignored: " + setting);
+        Playtest.require(mc.screen.mouseClicked(click, false), "Ignored button " + button.getMessage().getString());
         mc.screen.mouseReleased(click);
     }
 
     private static Button configButton(Minecraft mc, String setting) {
-        String expected = Component.translatable("gui.florafauna.tool_config." + setting).getString();
+        return button(mc, Component.translatable("gui.florafauna.tool_config." + setting));
+    }
+
+    static Button button(Minecraft mc, Component label) {
+        String expected = label.getString();
         return mc.screen.children().stream()
                 .filter(Button.class::isInstance).map(Button.class::cast)
                 .filter(button -> button.getMessage().getString().equals(expected))

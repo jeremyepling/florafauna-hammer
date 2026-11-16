@@ -49,7 +49,7 @@ final class HammerAbilityGameTests {
     static void register(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> env) {
         HammerGameTests.registerTest(event, env, "hammer_legacy_saved_stack", HammerAbilityGameTests::legacySavedStack);
         HammerGameTests.registerTest(event, env, "hammer_fresh_and_configured_loot", HammerAbilityGameTests::checkConfigurations);
-        HammerGameTests.registerTest(event, env, "hammer_action_wheel_dispatch", HammerAbilityGameTests::checkWheel);
+        HammerGameTests.registerTest(event, env, "hammer_block_action_dispatch", HammerAbilityGameTests::checkBlockActions);
         HammerGameTests.registerTest(event, env, "hammer_throw_single_item_and_reload", HammerAbilityGameTests::checkThrow);
         HammerGameTests.registerTest(event, env, "hammer_throw_rejected_or_inventory_full", HammerAbilityGameTests::checkThrowFailure);
     }
@@ -84,14 +84,14 @@ final class HammerAbilityGameTests {
         helper.succeed();
     }
 
-    private static void checkWheel(GameTestHelper helper) {
+    private static void checkBlockActions(GameTestHelper helper) {
         ServerPlayer player = player(helper);
         ItemStack hammer = new ItemStack(HammerRegistry.HAMMER.get());
         player.setItemInHand(InteractionHand.MAIN_HAND, hammer);
         BlockPos target = helper.absolutePos(new BlockPos(1, 1, 1));
         var hit = new BlockHitResult(target.getCenter(), Direction.UP, target, false);
         hammer.set(HammerRegistry.MULTI_BLOCK_MINING, new MiningModeData(MiningShape.FLAT_3X3, 1, 64, true));
-        for (var mode : HammerAction.values()) {
+        for (var mode : java.util.List.of(HammerAction.AUTO, HammerAction.STRIP, HammerAction.PATH, HammerAction.TILL, HammerAction.THROW)) {
             hammer.set(HammerRegistry.HAMMER_ACTION, mode);
             var original = mode == HammerAction.STRIP || mode == HammerAction.THROW ? Blocks.OAK_LOG : Blocks.DIRT;
             helper.getLevel().setBlockAndUpdate(target, original.defaultBlockState());
@@ -103,6 +103,7 @@ final class HammerAbilityGameTests {
                 case STRIP -> Blocks.STRIPPED_OAK_LOG;
                 case TILL -> Blocks.FARMLAND;
                 case THROW -> Blocks.OAK_LOG;
+                default -> throw new AssertionError(mode);
             };
             helper.assertTrue(use.isCanceled() && helper.getLevel().getBlockState(target).is(expected), "Wrong effect for " + mode);
             if (mode == HammerAction.THROW) {

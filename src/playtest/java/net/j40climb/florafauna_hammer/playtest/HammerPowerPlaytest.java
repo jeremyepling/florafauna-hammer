@@ -1,0 +1,120 @@
+package net.j40climb.florafauna_hammer.playtest;
+
+import net.j40climb.florafauna_hammer.common.item.abilities.data.HammerAction;
+import net.j40climb.florafauna_hammer.common.item.hammer.HammerItem;
+import net.j40climb.florafauna_hammer.setup.HammerRegistry;
+import net.minecraft.client.CameraType;
+import net.minecraft.client.gui.screens.inventory.ContainerScreen;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.monster.zombie.Husk;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
+
+import javax.imageio.ImageIO;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Set;
+
+/** A buried deposit behind a monochrome wall makes its private HUD echo measurable in the framebuffer. */
+final class HammerPowerPlaytest {
+    private static final BlockPos CHEST = new BlockPos(0, 202, 3);
+    private static final BlockPos ORE = new BlockPos(2, 203, 8);
+
+    static void steps(Playtest t) {
+        t.server("Build the scanner wall, chest and hidden diamond deposit", p -> {
+            var level = p.level();
+            for (var pos : BlockPos.betweenClosed(-5, 200, -4, 5, 206, 9)) {
+                var block = pos.getY() == 200 || pos.getZ() == 3 ? Blocks.GRAY_CONCRETE : Blocks.AIR;
+                level.setBlockAndUpdate(pos, block.defaultBlockState());
+            }
+            level.setBlockAndUpdate(CHEST, Blocks.CHEST.defaultBlockState());
+            level.setBlockAndUpdate(CHEST.above(), Blocks.AIR.defaultBlockState());
+            level.setBlockAndUpdate(ORE, Blocks.DIAMOND_ORE.defaultBlockState());
+            p.setGameMode(GameType.SURVIVAL);
+            p.getInventory().clearContent();
+            p.getInventory().setSelectedSlot(0);
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(HammerRegistry.HAMMER.get()));
+            p.teleportTo(level, 0.5, 201, 0.5, Set.of(), 0f, 0f, true);
+        });
+        t.awaitClient("Hold a fresh Hammer facing the scanner wall", mc ->
+                mc.player.getMainHandItem().is(HammerRegistry.HAMMER) && mc.player.onGround()
+                        && mc.hitResult instanceof BlockHitResult hit && hit.getBlockPos().equals(CHEST));
+        t.client("Set the first-person view", mc -> {
+            mc.options.setCameraType(CameraType.FIRST_PERSON);
+            mc.options.hideGui = false;
+        });
+        HammerMenuPlaytest.choose(t, HammerAction.SCAN);
+        t.client("Use a chest with Seismic Scan selected", mc ->
+                mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, (BlockHitResult) mc.hitResult));
+        t.awaitClient("Open the chest and preserve all charge", mc -> mc.screen instanceof ContainerScreen
+                && HammerItem.charge(mc.player.getMainHandItem()) == 64);
+        t.client("Close the chest and aim at the wall", mc -> {
+            mc.player.closeContainer();
+            mc.player.setYRot(-23);
+        });
+        t.awaitClient("Target plain concrete", mc -> mc.hitResult instanceof BlockHitResult hit
+                && mc.level.getBlockState(hit.getBlockPos()).is(Blocks.GRAY_CONCRETE));
+        long[] fired = {0};
+        t.client("Scan the wall", mc -> {
+            fired[0] = mc.level.getGameTime();
+            mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, (BlockHitResult) mc.hitResult);
+        });
+        t.awaitServer("Spend 16 scanner charge", p -> HammerItem.charge(p.getMainHandItem()) == 48
+                || HammerItem.charge(p.getMainHandItem()) == 49);
+        t.awaitClient("Allow the pulse to cross the wall", mc -> mc.level.getGameTime() >= fired[0] + 38);
+        t.screenshot("seismic-echo");
+        t.awaitClient("Allow the deposit echo to expire", mc -> mc.level.getGameTime() >= fired[0] + 155);
+        t.screenshot("seismic-expired");
+        t.client("Compare the echo through the wall before and after expiry", mc -> {
+            var projected = mc.gameRenderer.projectPointToScreen(new Vec3(3, 203, 9));
+            var dir = mc.gameDirectory.toPath().resolve("screenshots");
+            int visible = echoPixels(dir.resolve("seismic-echo.png"), projected);
+            int expired = echoPixels(dir.resolve("seismic-expired.png"), projected);
+            Playtest.require(visible >= 4 && expired == 0, "Unexpected violet marker pixel counts " + visible + " / " + expired);
+        });
+        Husk[] target = new Husk[1];
+        t.server("Prepare a hostile target beside the landing position", p -> {
+            target[0] = EntityType.HUSK.create(p.level(), EntitySpawnReason.TRIGGERED);
+            target[0].setPos(p.position().add(2, 0, 0));
+            target[0].setNoAi(true);
+            p.level().addFreshEntity(target[0]);
+            p.getMainHandItem().set(HammerRegistry.HAMMER_CHARGE, 64);
+        });
+        t.client("Jump from the scanner platform", mc -> mc.options.keyJump.setDown(true));
+        t.awaitClient("Use the selected scanner while jumping", mc -> {
+            if (mc.player.onGround() || mc.player.getY() < 201.5) return false;
+            mc.options.keyJump.setDown(false);
+            mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
+            return true;
+        });
+        t.awaitServer("Land the slam and damage the nearby hostile", p -> target[0].getHealth() < target[0].getMaxHealth()
+                && !p.hasData(HammerRegistry.PENDING_SLAM) && HammerItem.charge(p.getMainHandItem()) >= 52
+                && HammerItem.charge(p.getMainHandItem()) <= 54 && p.level().getBlockState(p.getOnPos()).is(Blocks.GRAY_CONCRETE));
+        t.screenshot("kinetic-impact");
+    }
+
+    private static int echoPixels(Path path, Vec3 projected) {
+        try {
+            var image = ImageIO.read(path.toFile());
+            int cx = (int)((projected.x + 1) * image.getWidth() / 2);
+            int cy = (int)((1 - projected.y) * image.getHeight() / 2);
+            int count = 0;
+            for (int y = Math.max(0, cy - 25); y < Math.min(cy + 26, image.getHeight()); y++) {
+                for (int x = Math.max(0, cx - 25); x < Math.min(cx + 26, image.getWidth()); x++) {
+                    int rgb = image.getRGB(x, y);
+                    int r = rgb >> 16 & 255, g = rgb >> 8 & 255, b = rgb & 255;
+                    if (b > r + 10 && r > g + 8 && b > 90) count++;
+                }
+            }
+            return count;
+        } catch (IOException e) {
+            throw new AssertionError("Cannot read scanner frame " + path, e);
+        }
+    }
+}

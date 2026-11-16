@@ -60,8 +60,9 @@ public class MultiBlockOutlineRenderer {
             var mining = mc.player.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING);
             if (mining == null) return;
             var shape = Component.translatable("mining_shape.florafauna." + mining.shape().getSerializedName());
-            var label = Component.translatable("hud.florafauna_hammer.mining_preview", shape, previewCount);
-            gui.text(mc.font, label, (gui.guiWidth() - mc.font.width(label)) / 2, gui.guiHeight() - 72, 0xFFDEC9FF);
+            var key = previewCount == 1 ? "hud.florafauna_hammer.mining_preview.single" : "hud.florafauna_hammer.mining_preview";
+            var label = Component.translatable(key, shape, previewCount);
+            gui.text(mc.font, label, (gui.guiWidth() - mc.font.width(label)) / 2, gui.guiHeight() / 2 + 17, 0xFFDEC9FF);
         });
     }
 

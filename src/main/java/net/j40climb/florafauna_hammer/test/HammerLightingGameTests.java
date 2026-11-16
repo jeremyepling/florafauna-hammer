@@ -38,7 +38,7 @@ final class HammerLightingGameTests {
             register(event, env, mine, shape.getSerializedName(), h -> supported(h, shape));
         }
         for (String condition : new String[]{"disabled", "empty", "left_only", "bright", "cancel_center", "cancel_place",
-                "precision", "bore", "vertical", "single"}) {
+                "bore", "vertical", "single"}) {
             register(event, env, mine, condition, h -> withheld(h, condition));
         }
         register(event, env, mine, "unloaded_wall", HammerLightingGameTests::unloadedWall);
@@ -116,7 +116,6 @@ final class HammerLightingGameTests {
         switch (condition) {
             case "disabled" -> player.getMainHandItem().set(HammerRegistry.TOOL_CONFIG, ToolConfig.DEFAULT.withMiningSpeed(MiningSpeed.INSTABREAK));
             case "empty" -> player.getInventory().setItem(12, ItemStack.EMPTY);
-            case "precision" -> player.setData(HammerRegistry.PRECISION_MINING, true);
             case "left_only" -> fill(player, c.south(), c.south().east(4).above(2), Blocks.AIR);
             case "bright" -> fill(player, c.north().above(), c.east(4).north().above(), Blocks.GLOWSTONE);
         }

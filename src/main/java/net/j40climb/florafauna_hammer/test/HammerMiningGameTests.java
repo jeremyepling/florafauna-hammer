@@ -66,7 +66,7 @@ final class HammerMiningGameTests {
         HammerGameTests.registerStructureTest(event, env, "hammer_stair_canceled_placement", MINE, 100, HammerMiningGameTests::stairCanceledPlacement);
         HammerGameTests.registerStructureTest(event, env, "hammer_lava_exposure", MINE, 100, HammerMiningGameTests::lavaExposure);
         HammerGameTests.registerStructureTest(event, env, "hammer_dimension_floor", MINE, 100, HammerMiningGameTests::buildFloor);
-        HammerGameTests.registerStructureTest(event, env, "hammer_precision_is_per_player", MINE, 100, HammerMiningGameTests::precision);
+        HammerGameTests.registerStructureTest(event, env, "hammer_single_is_per_tool", MINE, 100, HammerMiningGameTests::perToolMode);
         HammerGameTests.registerStructureTest(event, env, "hammer_permission_and_tool_rules", MINE, 100, HammerMiningGameTests::eligibility);
     }
 
@@ -89,34 +89,33 @@ final class HammerMiningGameTests {
                 new LavaExposure(center.east(5), Direction.UP), new LavaExposure(center.east(6), Direction.EAST));
         var plan = MultiBlockPatterns.plan(player, player.getMainHandItem(), center, Direction.WEST);
         h.assertTrue(Set.copyOf(LavaExposure.find(player.level(), plan)).equals(expected), "Wrong exposed faces along the bore");
-        player.setData(HammerRegistry.PRECISION_MINING, true);
+        configure(player, MiningShape.SINGLE);
         var precise = MultiBlockPatterns.plan(player, player.getMainHandItem(), center, Direction.WEST);
         h.assertTrue(LavaExposure.find(player.level(), precise).equals(List.of(new LavaExposure(center, Direction.DOWN))),
-                "Precision preview marked lava outside the single block");
+                "Single preview marked lava outside the single block");
         check(h, center.east(6), Blocks.STONE, "Preview changed the wall");
-        player.setData(HammerRegistry.PRECISION_MINING, false);
+        configure(player, MiningShape.BORE);
         swing(player, center, Direction.WEST, Direction.EAST);
         check(h, center.east(6), Blocks.AIR, "Lava warning blocked the cut");
         check(h, center.east(7), Blocks.LAVA, "Lava warning consumed lava");
         h.succeed();
     }
 
-    private static void precision(GameTestHelper h) {
-        var precise = player(h, MiningShape.TUNNEL_DOWN);
+    private static void perToolMode(GameTestHelper h) {
+        var precise = player(h, MiningShape.SINGLE);
         var other = player(h, MiningShape.TUNNEL_DOWN);
         var center = h.absolutePos(new BlockPos(11, 14, 11));
         var originalMode = precise.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING);
-        precise.setData(HammerRegistry.PRECISION_MINING, true);
         fill(precise, center.offset(0, -6, -4), center.above(2), Blocks.STONE);
         swing(precise, center, Direction.SOUTH, Direction.NORTH);
-        check(h, center, Blocks.AIR, "Precision break");
-        check(h, center.below(2), Blocks.STONE, "Precision placed an unwanted stair");
-        check(h, center.north(), Blocks.STONE, "Precision mined a neighbor");
+        check(h, center, Blocks.AIR, "Single break");
+        check(h, center.below(2), Blocks.STONE, "Single placed an unwanted stair");
+        check(h, center.north(), Blocks.STONE, "Single mined a neighbor");
         set(precise, center, Blocks.STONE);
         swing(other, center, Direction.SOUTH, Direction.NORTH);
         stair(h, center.below(2), Direction.SOUTH);
         h.assertTrue(originalMode.equals(precise.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING)),
-                "Temporary precision rewrote the held tool");
+                "Another player rewrote the selected Single mode");
         h.succeed();
     }
 

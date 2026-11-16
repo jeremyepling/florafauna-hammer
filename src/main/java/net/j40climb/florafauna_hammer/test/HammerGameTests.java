@@ -4,6 +4,7 @@ import net.j40climb.florafauna_hammer.HammerMod;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningModeData;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningShape;
 import net.minecraft.core.Holder;
+import net.j40climb.florafauna_hammer.common.item.abilities.SeismicTerrainGameTests;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.TestData;
 import net.minecraft.gametest.framework.TestEnvironmentDefinition;
@@ -20,6 +21,9 @@ public final class HammerGameTests {
                 new TestEnvironmentDefinition.AllOf());
         registerMiningModeTests(event, env);
         HammerAbilityGameTests.register(event, env);
+        HammerPowerGameTests.register(event, env);
+        HammerSlamLifecycleGameTests.register(event, env);
+        registerTest(event, env, "hammer_seismic_loaded_terrain", SeismicTerrainGameTests::checkLoadedTerrain);
         ChargedHammerGameTests.register(event, env);
         HammerMiningGameTests.register(event, env);
     }

@@ -67,5 +67,6 @@
   "message.florafauna_hammer.scan.charge": "Seismic Scan needs %s charge",
   "message.florafauna_hammer.scan.empty": "No ore echoes detected",
   "message.florafauna_hammer.scan.found": "Ore deposits detected: %s",
+  "hud.florafauna_hammer.mining_preview.single": "%1$s · 1 block",
   "hud.florafauna_hammer.mining_preview": "%1$s Â· %2$s blocks"
 }

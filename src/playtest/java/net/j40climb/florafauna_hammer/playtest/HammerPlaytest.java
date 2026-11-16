@@ -215,7 +215,7 @@ public final class HammerPlaytest {
                 && mc.player.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING).shape() == MiningShape.FLAT_5X5);
     }
 
-    private static void prepare(ServerPlayer player) {
+    static void prepare(ServerPlayer player) {
         ServerLevel level = player.level().getServer().overworld();
         var origin = new BlockPos(-2, 199, -5);
         var fixture = level.getStructureManager().get(Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "plots/hammer")).orElseThrow();
@@ -249,7 +249,7 @@ public final class HammerPlaytest {
         var click = new MouseButtonEvent(button.getX() + button.getWidth() / 2.0,
                 button.getY() + button.getHeight() / 2.0, new MouseButtonInfo(0, 0));
         Playtest.require(mc.screen.mouseClicked(click, false), "Ignored button " + button.getMessage().getString());
-        mc.screen.mouseReleased(click);
+        if (mc.screen != null) mc.screen.mouseReleased(click);
     }
 
     private static Button configButton(Minecraft mc, String setting) {
@@ -261,7 +261,7 @@ public final class HammerPlaytest {
         return mc.screen.children().stream()
                 .filter(Button.class::isInstance).map(Button.class::cast)
                 .filter(button -> button.getMessage().getString().equals(expected))
-                .findFirst().orElseThrow(() -> new AssertionError("Missing config button: " + expected));
+                .findFirst().orElseThrow(() -> new AssertionError("Missing Hammer menu choice: " + expected));
     }
 
     private static boolean aimedAt(Minecraft mc, BlockPos center, Direction face) {

@@ -3,7 +3,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)] [string]$SourceWorld,
-    [ValidateSet('hammer','stair-outline','powers')][string]$Scenario = 'hammer',
+    [ValidateSet('hammer','stair-outline','powers','radial')][string]$Scenario = 'hammer',
     [switch]$Offline
 )
 $ErrorActionPreference = 'Stop'

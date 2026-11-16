@@ -5,8 +5,6 @@ import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningSpeed;
 import net.j40climb.florafauna_hammer.setup.ClientSetup;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.client.KeyMapping;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.network.chat.Component;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.HammerAction;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.BlockPos;
@@ -51,11 +49,8 @@ final class HammerQuarryPlaytest {
         cutThenWalk(t, 1);
         HammerPlaytest.openMenu(t, "mining");
         t.client("Star Walkable Tunnel without changing the active stair shape", mc -> {
-            HammerPlaytest.click(mc, HammerPlaytest.button(mc, Component.translatable("gui.florafauna.hammer_menu.tunnel")));
-            var row = HammerPlaytest.button(mc, Component.translatable("mining_shape.florafauna.walkable_tunnel"));
-            var star = mc.screen.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
-                    .filter(b -> b.getY() == row.getY() && b.getX() > row.getX()).findFirst().orElseThrow();
-            HammerPlaytest.click(mc, star);
+            HammerRadialPlaytest.select(mc, "tunnel");
+            HammerRadialPlaytest.favorite(mc, MiningShape.WALKABLE_TUNNEL);
             mc.screen.onClose();
         });
         t.awaitServer("Attach the favorite to the held Hammer", p -> {

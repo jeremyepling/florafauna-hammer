@@ -6,7 +6,7 @@ A standalone NeoForge mod for Minecraft 26.1 and Java 25. Find the Hammer in Too
 
 Run `./gradlew build runGameTestServer` from this checkout. The jar is `build/libs/florafauna_hammer-0.0.1+26.1.jar`. The same command works with `gradlew.bat` on Windows. Models and tool tags are included in source.
 
-Use `./gradlew test` for the world-free JUnit suite or `./gradlew "-PgameTestFilter=florafauna_hammer:hammer_tunnel_gaps" runGameTestServer` for one server scenario. With PowerShell 7, run `./scripts/test_hammer.ps1 -SourceWorld <closed-save-directory>` for two real client phases, including save and reload. The runner copies the source world and keeps its logs and screenshots under `.tmp/world-playtests/`. Add `-Scenario powers` to exercise chest interaction, a scan through a wall, marker expiry and a jump slam. Use `-Scenario stair-outline` for the focused stair preview test.
+Use `./gradlew test` for the world-free JUnit suite or `./gradlew "-PgameTestFilter=florafauna_hammer:hammer_tunnel_gaps" runGameTestServer` for one server scenario. With PowerShell 7, run `./scripts/test_hammer.ps1 -SourceWorld <closed-save-directory>` for two real client phases, including save and reload. The runner copies the source world and keeps its logs and screenshots under `.tmp/world-playtests/`. Add `-Scenario powers` to exercise chest interaction, a scan through a wall, marker expiry and a jump slam. Use `-Scenario radial` for mouse and keyboard wheel navigation, favorites, and settings. Use `-Scenario stair-outline` for the focused stair preview test.
 
 For a sibling Gradle build add `includeBuild('../hammer')` to settings and depend on `net.j40climb.florafauna_hammer:florafauna_hammer:0.0.1+26.1`. Select the matching Minecraft branch when building. Server and client both need the same mod version.
 
@@ -70,13 +70,15 @@ Each Hammer remembers its settings.
 |-------|--------|
 | Tap **C** | Cycle mining shapes in their usual order. With favorites, cycle only the starred shapes. |
 | Double-tap **C** within 250 ms | Select Single Block. This keeps your favorites and stays selected until you change modes. |
-| Hold **C** for 300 ms | Open the Hammer menu for the tool in your main hand. |
+| Hold **C** for 300 ms | Open the radial wheel for the Hammer in your main hand. |
 | Right-click on the ground | Use the selected ability. |
 | Right-click off the ground | Attempt a Kinetic Ground Slam. |
 | **R** / **M** | Call lightning / teleport to the surface with the corresponding ability. |
 | Tap / hold **T** | Throw / charge an ore-mining throw. Release to throw. |
 
-In **Mining**, select any shape or toggle the star beside it. A new Hammer has no favorites. Removing its last star restores the full cycle. Selecting an unstarred shape leaves the stars alone. The next tap advances to the next starred shape in the usual order, wrapping as needed.
+Release **C** once the wheel opens. Click a wedge to choose **Mining**, **Abilities**, or **Settings**. Arrow keys move around the ring and **Enter** activates the focused wedge. Click the center to go back one level or close the root wheel.
+
+In **Mining**, choose Flat, Tunnel, or Special and click a shape to equip it. Right-click its wedge or press **F** on it to toggle its favorite star. A new Hammer has no favorites. Removing its last star restores the full cycle. Selecting an unstarred shape leaves the stars alone. The next tap advances to the next starred shape in the usual order, wrapping as needed.
 
 In **Abilities**, select Auto, Strip, Path, Till, Throw, Lightning, Surface Teleport or Seismic Scan. Auto tries enabled block transformations first and then the configured fallback, which is Throw on a new Hammer. Strip, Path and Till leave the usual block interaction available when the targeted block cannot be transformed. In **Settings**, change enchantment, mining speed, vein matching or auto torches. Each Hammer carries its own selections.
 
@@ -117,7 +119,7 @@ After a successful center hit, flat and tunnel swings skip air and continue thro
 
 ## Tunnel Lighting
 
-Enable **Auto torches** in the held Hammer’s **Settings** tab (hold **C**). After cutting a horizontal Walkable or Large Tunnel, or an ascending or descending staircase, it can place one regular torch on the right wall in the direction of travel. It checks the newly opened passage for light level 7 or below and a solid attachment. It uses the offhand torch stack first, then searches the inventory. Survival consumes one torch on successful placement. Creative requires a torch and keeps the stack.
+Enable **Auto torches** in the held Hammer’s **Settings** wheel (hold **C**). After cutting a horizontal Walkable or Large Tunnel, or an ascending or descending staircase, it can place one regular torch on the right wall in the direction of travel. It checks the newly opened passage for light level 7 or below and a solid attachment. It uses the offhand torch stack first, then searches the inventory. Survival consumes one torch on successful placement. Creative requires a torch and keeps the stack.
 
 ## Charged Hammer Throw
 

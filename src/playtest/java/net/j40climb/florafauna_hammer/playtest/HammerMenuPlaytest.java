@@ -30,8 +30,8 @@ final class HammerMenuPlaytest {
         HammerPlaytest.openMenu(t, "abilities");
         if (action == HammerAction.TILL) t.screenshot("hammer-menu-abilities");
         t.client("Select " + action.getSerializedName(), mc -> {
-            for (var available : HammerAction.values()) HammerPlaytest.button(mc, available.label());
-            HammerPlaytest.click(mc, HammerPlaytest.button(mc, action.label()));
+            for (var available : HammerAction.values()) HammerPlaytest.button(mc, HammerRadialPlaytest.actionLabel(available));
+            HammerPlaytest.click(mc, HammerPlaytest.button(mc, HammerRadialPlaytest.actionLabel(action)));
             mc.screen.onClose();
         });
         t.awaitServer("Persist " + action.getSerializedName() + " on the server's Hammer", p -> p.getMainHandItem().get(HammerRegistry.HAMMER_ACTION) == action);

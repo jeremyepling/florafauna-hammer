@@ -70,13 +70,13 @@ Each Hammer remembers its settings.
 |-------|--------|
 | Tap **C** | Cycle mining shapes in their usual order. With favorites, cycle only the starred shapes. |
 | Double-tap **C** within 250 ms | Select Single Block. This keeps your favorites and stays selected until you change modes. |
-| Hold **C** for 300 ms | Open both Hammer wheels side by side. |
+| Hold **C** for 300 ms | Open both Hammer wheels side by side. Keep **C** held while choosing. |
 | Right-click on the ground | Use the selected ability. |
 | Right-click off the ground | Attempt a Kinetic Ground Slam. |
 | **R** / **M** | Call lightning / teleport to the surface with the corresponding ability. |
 | Tap / hold **T** | Throw / charge an ore-mining throw. Release to throw. |
 
-Once the wheels appear, release **C** and click a wedge. Choose a mining shape on the left and a grounded ability on the right. The right wheel’s center switches to **Settings** and back. Use **Tab** to reach either wheel, arrow keys to move around it, and **Enter** to select. Press **Esc** to close.
+While holding **C**, click a mining shape on the left and a grounded ability on the right, in either order. Each click sets that wheel immediately. Hover highlights a wedge. Release **C** to close the wheels and keep your choices. You can change just one wheel or close both without changing either. The right wheel’s center switches to **Settings** and back. Use **Tab** to reach either wheel, arrow keys to move around it, and **Enter** to select. Press **Esc** to close.
 
 The left wheel gives direct access to all ten mining shapes. Right-click its wedge or press **F** on it to toggle its favorite star. A new Hammer has no favorites. Removing its last star restores the full cycle. Selecting an unstarred shape leaves the stars alone. The next tap advances to the next starred shape in the usual order, wrapping as needed.
 

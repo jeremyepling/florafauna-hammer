@@ -50,7 +50,7 @@ final class HammerQuarryPlaytest {
         HammerPlaytest.openMenu(t);
         t.client("Star Walkable Tunnel without changing the active stair shape", mc -> {
             HammerRadialPlaytest.favorite(mc, MiningShape.WALKABLE_TUNNEL);
-            mc.screen.onClose();
+            HammerPlaytest.releaseWheel(mc);
         });
         t.awaitServer("Attach the favorite to the held Hammer", p -> {
             var mode = p.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING);

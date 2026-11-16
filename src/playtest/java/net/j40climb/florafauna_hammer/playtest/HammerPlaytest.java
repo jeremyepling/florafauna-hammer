@@ -13,6 +13,7 @@ import net.minecraft.client.CameraType;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.input.MouseButtonInfo;
 import net.minecraft.resources.Identifier;
@@ -77,18 +78,18 @@ public final class HammerPlaytest {
         openSettings(t);
         t.client("Click the speed control to switch from Efficiency to Instabreak", mc -> {
             clickConfigButton(mc, "speed.efficiency");
-            mc.screen.onClose();
+            releaseWheel(mc);
         });
         t.awaitServer("Receive the speed update on the server", p ->
                 p.getMainHandItem().get(HammerRegistry.TOOL_CONFIG).miningSpeed() == MiningSpeed.INSTABREAK);
         t.awaitClient("Synchronize the server's tool configuration back to the client", mc ->
                 mc.player.getMainHandItem().get(HammerRegistry.TOOL_CONFIG).miningSpeed() == MiningSpeed.INSTABREAK);
         openSettings(t);
-        t.client("Verify the persisted speed label and press Cycle Mining Mode", mc -> {
+        t.client("Verify the persisted speed label and release the menu key", mc -> {
             configButton(mc, "speed.instabreak");
-            mc.screen.onClose();
-            KeyMapping.click(ClientSetup.CYCLE_MINING_MODE_KEY.get().getKey());
+            releaseWheel(mc);
         });
+        t.client("Tap the mapped mining key", mc -> KeyMapping.click(ClientSetup.CYCLE_MINING_MODE_KEY.get().getKey()));
         t.awaitServer("Select flat 3×3 mining on the server", p ->
                 p.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING).shape() == MiningShape.FLAT_3X3);
 
@@ -141,7 +142,7 @@ public final class HammerPlaytest {
         t.client("Click the vein matching control to select " + next, mc -> {
             clickConfigButton(mc, current);
             configButton(mc, next);
-            mc.screen.onClose();
+            releaseWheel(mc);
         });
         t.awaitServer("Save vein matching " + next + " on the held hammer", p ->
                 p.getMainHandItem().get(HammerRegistry.TOOL_CONFIG).exactVein() == exact);
@@ -156,7 +157,7 @@ public final class HammerPlaytest {
         t.client("Click the auto torches control to select " + next, mc -> {
             clickConfigButton(mc, current);
             configButton(mc, next);
-            mc.screen.onClose();
+            releaseWheel(mc);
         });
         t.awaitServer("Save auto torches " + next + " on the held Hammer", p ->
                 p.getMainHandItem().get(HammerRegistry.TOOL_CONFIG).tunnelLighting() == enable);
@@ -233,9 +234,20 @@ public final class HammerPlaytest {
     }
 
     static void openMenu(Playtest t) {
-        t.client("Hold C to open both Hammer wheels", mc -> ClientSetup.CYCLE_MINING_MODE_KEY.get().setDown(true));
+        t.client("Hold the mapped Hammer control to open both wheels", mc -> {
+            var key = ClientSetup.CYCLE_MINING_MODE_KEY.get().getKey();
+            KeyMapping.set(key, true);
+            KeyMapping.click(key);
+        });
         t.awaitClient("Show both Hammer wheels", mc -> mc.screen instanceof HammerMenuScreen);
-        t.client("Release C", mc -> ClientSetup.CYCLE_MINING_MODE_KEY.get().setDown(false));
+    }
+
+    static void releaseWheel(Minecraft mc) {
+        var mapped = ClientSetup.CYCLE_MINING_MODE_KEY.get().getKey();
+        Playtest.require(mc.screen instanceof HammerMenuScreen, "Hammer wheel closed before releasing the bound key");
+        // A screen receives the physical key-up even when opening it cleared the game's key mappings.
+        Playtest.require(mc.screen.keyReleased(new KeyEvent(mapped.getValue(), 0, 0)), "Wheel ignored the mapped release");
+        Playtest.require(mc.screen == null, "Mapped release left the wheel open");
     }
 
     private static void openSettings(Playtest t) {

@@ -59,6 +59,7 @@
   "gui.florafauna.hammer_menu.flat": "Flat",
   "gui.florafauna.hammer_menu.tunnel": "Tunnel",
   "gui.florafauna.hammer_menu.special": "Special",
+  "gui.florafauna.hammer_menu.release_hint": "Release %s to close",
   "gui.florafauna.hammer_menu.favorites_hint": "Right-click or F to favorite",
   "message.florafauna_hammer.scan.cooldown": "Seismic Scan is recharging",
   "message.florafauna_hammer.scan.charge": "Seismic Scan needs %s charge",

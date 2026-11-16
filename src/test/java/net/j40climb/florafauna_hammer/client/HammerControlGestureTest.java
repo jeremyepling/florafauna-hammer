@@ -47,11 +47,11 @@ class HammerControlGestureTest {
     }
 
     @Test
-    void holdingSecondPressOpensMenuEvenWhenReleaseIsFirstTickPastThreshold() {
+    void releasingBeforeTheFirstHoldTickDoesNotOpenTheWheelOrSelectSingle() {
         gesture.press(0);
         gesture.release(20);
         gesture.press(110);
-        assertEquals(MENU, gesture.release(422));
+        assertEquals(NONE, gesture.release(422));
         assertEquals(NONE, gesture.advance(900));
     }
 

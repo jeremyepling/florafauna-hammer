@@ -22,6 +22,10 @@ final class HammerRadialPlaytest {
         t.awaitClient("Receive the Hammer", mc -> mc.player.getMainHandItem().is(HammerRegistry.HAMMER));
         HammerPlaytest.openMenu(t);
         t.client("Verify ten mining choices on the left and eight abilities on the right", HammerRadialPlaytest::checkBothWheels);
+        t.client("Releasing the default C key leaves the remapped V hold active", mc -> {
+            mc.screen.keyReleased(new KeyEvent(GLFW.GLFW_KEY_C, 0, 0));
+            Playtest.require(mc.screen instanceof HammerMenuScreen, "Unbound C closed the wheels");
+        });
         t.screenshot("hammer-wheels");
         t.client("Select Walkable with an off-label click in the left wheel", mc -> {
             var wedge = HammerPlaytest.button(mc, shapeLabel(MiningShape.WALKABLE_TUNNEL));
@@ -36,6 +40,26 @@ final class HammerRadialPlaytest {
         t.awaitServer("Keep the selected mining shape while setting the grounded ability", p ->
                 p.getMainHandItem().get(HammerRegistry.HAMMER_ACTION) == HammerAction.SCAN
                         && p.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING).shape() == MiningShape.WALKABLE_TUNNEL);
+        releaseOver(t, "mining then ability", actionLabel(HammerAction.THROW), MiningShape.WALKABLE_TUNNEL, HammerAction.SCAN);
+
+        HammerPlaytest.openMenu(t);
+        t.client("Choose Throw then Large during the same hold", mc -> {
+            HammerPlaytest.click(mc, HammerPlaytest.button(mc, actionLabel(HammerAction.THROW)));
+            select(mc, "shape.large_tunnel");
+        });
+        releaseOver(t, "ability then mining", shapeLabel(MiningShape.SINGLE), MiningShape.LARGE_TUNNEL, HammerAction.THROW);
+
+        HammerPlaytest.openMenu(t);
+        releaseOver(t, "hover only", shapeLabel(MiningShape.BORE), MiningShape.LARGE_TUNNEL, HammerAction.THROW);
+
+        HammerPlaytest.openMenu(t);
+        t.client("Choose only Walkable", mc -> select(mc, "shape.walkable_tunnel"));
+        releaseOver(t, "mining only", actionLabel(HammerAction.STRIP), MiningShape.WALKABLE_TUNNEL, HammerAction.THROW);
+
+        HammerPlaytest.openMenu(t);
+        t.client("Choose only Scan", mc -> HammerPlaytest.click(mc, HammerPlaytest.button(mc, actionLabel(HammerAction.SCAN))));
+        releaseOver(t, "ability only", shapeLabel(MiningShape.SINGLE), MiningShape.WALKABLE_TUNNEL, HammerAction.SCAN);
+        HammerPlaytest.openMenu(t);
         t.client("Right-click Walkable to favorite it", mc -> favorite(mc, MiningShape.WALKABLE_TUNNEL));
         t.awaitServer("A secondary click favorites Walkable and preserves the selected mode", p -> {
             var mode = p.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING);
@@ -82,9 +106,27 @@ final class HammerRadialPlaytest {
         t.screenshot("hammer-wheels-narrow");
         t.client("Select Throw at narrow width", mc -> HammerPlaytest.click(mc, HammerPlaytest.button(mc, actionLabel(HammerAction.THROW))));
         t.awaitServer("Apply Throw from the narrow right wheel", p -> p.getMainHandItem().get(HammerRegistry.HAMMER_ACTION) == HammerAction.THROW);
-        t.client("Close the screen from the left hub", mc -> {
-            HammerPlaytest.click(mc, HammerPlaytest.button(mc, CommonComponents.GUI_DONE));
-            Playtest.require(mc.screen == null, "Left hub did not close the screen");
+        releaseOver(t, "narrow layout", shapeLabel(MiningShape.SINGLE), MiningShape.BORE, HammerAction.THROW);
+    }
+
+    private static void releaseOver(Playtest t, String gesture, Component hovered, MiningShape shape, HammerAction action) {
+        long[] released = {0};
+        t.client("Release over a different wedge after " + gesture, mc -> {
+            var wedge = HammerPlaytest.button(mc, hovered);
+            mc.screen.mouseMoved(wedge.getX() + wedge.getWidth() / 2.0, wedge.getY() + wedge.getHeight() / 2.0);
+            HammerPlaytest.releaseWheel(mc);
+            released[0] = System.nanoTime();
+        });
+        t.awaitClient("Keep the wheel closed beyond the tap and hold windows after " + gesture, mc -> {
+            Playtest.require(mc.screen == null, "Wheel reopened after " + gesture);
+            return System.nanoTime() - released[0] >= 500_000_000L;
+        });
+        t.server("Preserve exactly the clicked choices after " + gesture, player -> {
+            var tool = player.getMainHandItem();
+            var actualShape = tool.get(HammerRegistry.MULTI_BLOCK_MINING).shape();
+            var actualAction = tool.get(HammerRegistry.HAMMER_ACTION);
+            Playtest.require(actualShape == shape && actualAction == action,
+                    gesture + " expected " + shape + "/" + action + ", got " + actualShape + "/" + actualAction);
         });
     }
 

@@ -19,6 +19,8 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
+import net.j40climb.florafauna_hammer.client.KeyInputEvents;
+import net.j40climb.florafauna_hammer.setup.ClientSetup;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
@@ -219,6 +221,8 @@ public final class HammerMenuScreen extends Screen {
             }
             g.centeredText(font, label("favorites_hint"), leftX, detailY + 12, 0xffe1cbe9);
         }
+        g.centeredText(font, Component.translatable(MENU + "release_hint",
+                ClientSetup.CYCLE_MINING_MODE_KEY.get().getTranslatedKeyMessage()), rightX, detailY + 12, 0xffe1cbe9);
         if (!settingsOpen && action != null) {
             g.centeredText(font, action.label(), rightX, headingY + 11, 0xffffd17e);
             var pointed = pointedWedge(rightWheel, mouseX, mouseY);
@@ -263,6 +267,7 @@ public final class HammerMenuScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        if (ClientSetup.CYCLE_MINING_MODE_KEY.get().matchesMouse(event)) return true;
         mouseMoved(event.x(), event.y());
         boolean handled = super.mouseClicked(event, doubleClick);
         // A navigation click may have replaced the widget that just handled it.
@@ -271,7 +276,18 @@ public final class HammerMenuScreen extends Screen {
     }
 
     @Override
+    public boolean mouseReleased(MouseButtonEvent event) {
+        if (ClientSetup.CYCLE_MINING_MODE_KEY.get().matchesMouse(event)) {
+            KeyInputEvents.releaseMenuHold(minecraft);
+            return true;
+        }
+        return super.mouseReleased(event);
+    }
+
+    @Override
     public boolean keyPressed(KeyEvent event) {
+        // A repeat of the held control must never activate a focused widget, even when remapped to Enter or F.
+        if (ClientSetup.CYCLE_MINING_MODE_KEY.get().matches(event)) return true;
         switch (event.key()) {
             case GLFW.GLFW_KEY_BACKSPACE -> {
                 if (settingsOpen && action != null) toggleSettings();
@@ -308,6 +324,10 @@ public final class HammerMenuScreen extends Screen {
 
     @Override
     public boolean keyReleased(KeyEvent event) {
+        if (ClientSetup.CYCLE_MINING_MODE_KEY.get().matches(event)) {
+            KeyInputEvents.releaseMenuHold(minecraft);
+            return true;
+        }
         if (event.key() == GLFW.GLFW_KEY_F) favoriteKeyDown = false;
         return super.keyReleased(event);
     }

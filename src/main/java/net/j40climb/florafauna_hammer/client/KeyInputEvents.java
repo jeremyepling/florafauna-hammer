@@ -67,19 +67,47 @@ public class KeyInputEvents {
     private static int gestureSlot = -1;
     private static boolean wasDown;
     private static boolean waitForRelease;
+    private static boolean menuHold;
 
     // Observe physical edges before another input can arrive in the same tick. Tick polling also
     // supports injected key mappings and fires deadlines while the keyboard is idle.
     @SubscribeEvent
     public static void onControlKey(InputEvent.Key event) {
-        if (ClientSetup.CYCLE_MINING_MODE_KEY.get().matches(event.getKeyEvent())) updateControl(Minecraft.getInstance());
+        if (ClientSetup.CYCLE_MINING_MODE_KEY.get().matches(event.getKeyEvent())) controlEdge(event.getAction());
     }
 
     @SubscribeEvent
     public static void onControlMouse(InputEvent.MouseButton.Post event) {
         if (ClientSetup.CYCLE_MINING_MODE_KEY.get().getKey().equals(InputConstants.Type.MOUSE.getOrCreate(event.getButton()))) {
-            updateControl(Minecraft.getInstance());
+            controlEdge(event.getAction());
         }
+    }
+
+    private static void controlEdge(int action) {
+        var mc = Minecraft.getInstance();
+        if (menuHold && action == InputConstants.RELEASE) {
+            releaseMenuHold(mc);
+            return;
+        }
+        // Escape, changing worlds, or another screen may have consumed the old release.
+        if (menuHold && action == InputConstants.PRESS && mc.screen == null) resetMenuHold();
+        updateControl(mc);
+    }
+
+    /** Opening a Screen clears KeyMapping.isDown. Its keyboard/mouse release is the authoritative edge. */
+    public static void releaseMenuHold(Minecraft mc) {
+        if (mc.screen instanceof HammerMenuScreen screen) screen.onClose();
+        resetMenuHold();
+        var key = ClientSetup.CYCLE_MINING_MODE_KEY.get();
+        key.setDown(false);
+        while (key.consumeClick()) { } // Discard any repeat queued before the screen grabbed input.
+    }
+
+    private static void resetMenuHold() {
+        menuHold = false;
+        wasDown = false;
+        waitForRelease = false;
+        gesture.reset();
     }
 
     private static void updateControl(Minecraft mc) {
@@ -88,6 +116,13 @@ public class KeyInputEvents {
         boolean down = key.isDown();
         int clicks = 0;
         while (key.consumeClick()) clicks++;
+        if (menuHold) {
+            if (player != gesturePlayer) {
+                releaseMenuHold(mc);
+                gesturePlayer = player;
+            }
+            return;
+        }
 
         int slot = player == null ? -1 : player.getInventory().getSelectedSlot();
         var held = player == null ? ItemStack.EMPTY : player.getMainHandItem();
@@ -123,7 +158,10 @@ public class KeyInputEvents {
             case NONE -> { }
             case CYCLE -> ClientPacketDistributor.sendToServer(CycleMiningModePayload.INSTANCE);
             case SINGLE -> ClientPacketDistributor.sendToServer(new SelectMiningModePayload(gestureSlot, MiningShape.SINGLE, false));
-            case MENU -> mc.setScreen(new HammerMenuScreen(gestureSlot, mc.player.getMainHandItem()));
+            case MENU -> {
+                menuHold = true;
+                mc.setScreen(new HammerMenuScreen(gestureSlot, mc.player.getMainHandItem()));
+            }
         }
     }
 

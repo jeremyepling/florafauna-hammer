@@ -46,6 +46,7 @@ try {
         }
         Set-Content -LiteralPath (Join-Path $gameDir '.florafauna-playtest') -Value $Scenario
         $gameOptions = @('version:4786','pauseOnLostFocus:false','key_key.florafauna.throw_item:key.keyboard.comma','skipMultiplayerWarning:true','onboardAccessibility:false','tutorialStep:none','autoJump:false','renderDistance:4','simulationDistance:5')
+        if ($Scenario -eq 'radial') { $gameOptions += 'key_key.florafauna.cycle_mining_mode:key.keyboard.v' }
         $gameOptions | Set-Content -LiteralPath (Join-Path $gameDir 'options.txt')
     } finally { if ($lock) { $lock.Dispose() } }
 

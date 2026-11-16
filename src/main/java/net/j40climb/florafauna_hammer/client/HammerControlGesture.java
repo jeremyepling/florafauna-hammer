@@ -38,9 +38,9 @@ final class HammerControlGesture {
 
     Action release(long now) {
         if (!pressed) return Action.NONE;
-        var held = advance(now);
         pressed = false;
-        if (opened) return held;
+        // If the first tick past the hold threshold arrives on release, the wheel is already dismissed.
+        if (opened || now - pressedAt >= HOLD_MS) return Action.NONE;
         if (secondTap) return Action.SINGLE;
         pendingTap = true;
         tapDeadline = now + DOUBLE_TAP_MS;

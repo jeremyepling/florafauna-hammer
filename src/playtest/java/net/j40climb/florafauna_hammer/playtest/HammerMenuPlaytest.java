@@ -32,7 +32,7 @@ final class HammerMenuPlaytest {
         t.client("Select " + action.getSerializedName(), mc -> {
             for (var available : HammerAction.values()) HammerPlaytest.button(mc, HammerRadialPlaytest.actionLabel(available));
             HammerPlaytest.click(mc, HammerPlaytest.button(mc, HammerRadialPlaytest.actionLabel(action)));
-            mc.screen.onClose();
+            HammerPlaytest.releaseWheel(mc);
         });
         t.awaitServer("Persist " + action.getSerializedName() + " on the server's Hammer", p -> p.getMainHandItem().get(HammerRegistry.HAMMER_ACTION) == action);
         t.awaitClient("Sync " + action.getSerializedName() + " back to the held tool", mc -> mc.screen == null

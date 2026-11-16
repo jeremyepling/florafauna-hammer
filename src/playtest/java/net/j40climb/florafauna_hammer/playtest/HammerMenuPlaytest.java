@@ -27,8 +27,8 @@ final class HammerMenuPlaytest {
     }
 
     static void choose(Playtest t, HammerAction action) {
-        HammerPlaytest.openMenu(t, "abilities");
-        if (action == HammerAction.TILL) t.screenshot("hammer-menu-abilities");
+        HammerPlaytest.openMenu(t);
+        if (action == HammerAction.TILL) t.screenshot("hammer-wheels-abilities");
         t.client("Select " + action.getSerializedName(), mc -> {
             for (var available : HammerAction.values()) HammerPlaytest.button(mc, HammerRadialPlaytest.actionLabel(available));
             HammerPlaytest.click(mc, HammerPlaytest.button(mc, HammerRadialPlaytest.actionLabel(action)));

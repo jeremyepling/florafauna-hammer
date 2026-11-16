@@ -47,9 +47,8 @@ final class HammerQuarryPlaytest {
         }
         cutThenWalk(t, 0);
         cutThenWalk(t, 1);
-        HammerPlaytest.openMenu(t, "mining");
+        HammerPlaytest.openMenu(t);
         t.client("Star Walkable Tunnel without changing the active stair shape", mc -> {
-            HammerRadialPlaytest.select(mc, "tunnel");
             HammerRadialPlaytest.favorite(mc, MiningShape.WALKABLE_TUNNEL);
             mc.screen.onClose();
         });

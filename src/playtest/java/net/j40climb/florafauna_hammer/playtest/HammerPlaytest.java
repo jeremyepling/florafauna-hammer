@@ -74,7 +74,7 @@ public final class HammerPlaytest {
             mc.options.setCameraType(CameraType.FIRST_PERSON);
             mc.options.hideGui = false;
         });
-        openMenu(t, "settings");
+        openSettings(t);
         t.client("Click the speed control to switch from Efficiency to Instabreak", mc -> {
             clickConfigButton(mc, "speed.efficiency");
             mc.screen.onClose();
@@ -83,7 +83,7 @@ public final class HammerPlaytest {
                 p.getMainHandItem().get(HammerRegistry.TOOL_CONFIG).miningSpeed() == MiningSpeed.INSTABREAK);
         t.awaitClient("Synchronize the server's tool configuration back to the client", mc ->
                 mc.player.getMainHandItem().get(HammerRegistry.TOOL_CONFIG).miningSpeed() == MiningSpeed.INSTABREAK);
-        openMenu(t, "settings");
+        openSettings(t);
         t.client("Verify the persisted speed label and press Cycle Mining Mode", mc -> {
             configButton(mc, "speed.instabreak");
             mc.screen.onClose();
@@ -137,7 +137,7 @@ public final class HammerPlaytest {
     private static void setVeinPreference(Playtest t, boolean exact) {
         String current = exact ? "vein.same_ore" : "vein.exact";
         String next = exact ? "vein.exact" : "vein.same_ore";
-        openMenu(t, "settings");
+        openSettings(t);
         t.client("Click the vein matching control to select " + next, mc -> {
             clickConfigButton(mc, current);
             configButton(mc, next);
@@ -152,7 +152,7 @@ public final class HammerPlaytest {
     private static void setLighting(Playtest t, boolean enable) {
         String current = enable ? "lighting.off" : "lighting.on";
         String next = enable ? "lighting.on" : "lighting.off";
-        openMenu(t, "settings");
+        openSettings(t);
         t.client("Click the auto torches control to select " + next, mc -> {
             clickConfigButton(mc, current);
             configButton(mc, next);
@@ -232,13 +232,15 @@ public final class HammerPlaytest {
         player.inventoryMenu.broadcastChanges();
     }
 
-    static void openMenu(Playtest t, String tab) {
-        t.client("Hold C to open " + tab, mc -> ClientSetup.CYCLE_MINING_MODE_KEY.get().setDown(true));
-        t.awaitClient("Show the unified Hammer menu", mc -> mc.screen instanceof HammerMenuScreen);
-        t.client("Release C and select " + tab, mc -> {
-            ClientSetup.CYCLE_MINING_MODE_KEY.get().setDown(false);
-            click(mc, button(mc, Component.translatable("gui.florafauna.hammer_menu." + tab)));
-        });
+    static void openMenu(Playtest t) {
+        t.client("Hold C to open both Hammer wheels", mc -> ClientSetup.CYCLE_MINING_MODE_KEY.get().setDown(true));
+        t.awaitClient("Show both Hammer wheels", mc -> mc.screen instanceof HammerMenuScreen);
+        t.client("Release C", mc -> ClientSetup.CYCLE_MINING_MODE_KEY.get().setDown(false));
+    }
+
+    private static void openSettings(Playtest t) {
+        openMenu(t);
+        t.client("Open Settings from the right wheel", mc -> HammerRadialPlaytest.select(mc, "settings"));
     }
 
     private static void clickConfigButton(Minecraft mc, String setting) {

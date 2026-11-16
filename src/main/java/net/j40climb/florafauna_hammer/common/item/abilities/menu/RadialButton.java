@@ -24,6 +24,7 @@ final class RadialButton extends Button {
     private final int cx, cy, inner, outer;
     private final double direction, halfAngle;
     private final ItemStack icon;
+    private final boolean compact;
     private final @Nullable Runnable alternate;
     private @Nullable Component caption;
     private boolean selected, favorite;
@@ -37,6 +38,7 @@ final class RadialButton extends Button {
         this.inner = inner;
         this.caption = caption;
         this.icon = icon;
+        compact = outer < 95 && count >= 7 && !icon.isEmpty();
         this.alternate = alternate;
         direction = -Math.PI / 2 + Math.TAU * index / count;
         halfAngle = Math.PI / count;
@@ -95,8 +97,12 @@ final class RadialButton extends Button {
         int x = getX() + 8;
         int width = Math.max(30, (int)Math.min(outer - inner + 8,
                 (outer + inner) * Math.sin(Math.min(halfAngle, Math.PI / 2)) - 7));
-        var lines = font.split(getMessage(), width);
-        var details = caption == null ? List.<FormattedCharSequence>of() : font.split(caption, width);
+        // A short unbroken name can extend past the conservative wrap width at the label radius.
+        String label = getMessage().getString();
+        int labelWidth = width;
+        if (!label.contains(" ") && font.width(label) <= width + 12) labelWidth = Math.max(width, font.width(label));
+        List<FormattedCharSequence> lines = compact ? List.of() : font.split(getMessage(), labelWidth);
+        var details = compact || caption == null ? List.<FormattedCharSequence>of() : font.split(caption, width);
         int iconHeight = icon.isEmpty() ? 0 : 18;
         int y = getY() + 8 - (iconHeight + (lines.size() + details.size()) * font.lineHeight) / 2;
         if (!icon.isEmpty()) {

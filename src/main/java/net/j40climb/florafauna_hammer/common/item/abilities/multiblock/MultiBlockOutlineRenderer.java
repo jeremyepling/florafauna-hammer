@@ -14,6 +14,9 @@ import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.phys.BlockHitResult;
+import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -43,6 +46,25 @@ public class MultiBlockOutlineRenderer {
     private static final int LAVA_COLOR = 0xFFFF780D;
     private static final Map<Direction, VoxelShape> FACE_OUTLINES = Shapes.rotateAll(Shapes.box(0, 0, 0, 1, 1, 0.005));
 
+    private static BlockPos previewTarget;
+    private static int previewCount;
+    private static long previewTick;
+
+    @SubscribeEvent
+    public static void registerMiningHud(RegisterGuiLayersEvent event) {
+        event.registerAboveAll(Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "mining_preview"), (gui, delta) -> {
+            var mc = Minecraft.getInstance();
+            if (mc.options.hideGui || mc.player == null || mc.screen != null
+                    || !(mc.hitResult instanceof BlockHitResult hit) || !hit.getBlockPos().equals(previewTarget)
+                    || Math.abs(mc.player.level().getGameTime() - previewTick) > 1 || previewCount == 0) return;
+            var mining = mc.player.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING);
+            if (mining == null) return;
+            var shape = Component.translatable("mining_shape.florafauna." + mining.shape().getSerializedName());
+            var label = Component.translatable("hud.florafauna_hammer.mining_preview", shape, previewCount);
+            gui.text(mc.font, label, (gui.guiWidth() - mc.font.width(label)) / 2, gui.guiHeight() - 72, 0xFFDEC9FF);
+        });
+    }
+
     @SubscribeEvent
     public static void registerPipeline(RegisterRenderPipelinesEvent event) {
         event.registerPipeline(PREVIEW_PIPELINE);
@@ -61,6 +83,9 @@ public class MultiBlockOutlineRenderer {
 
         BlockPos target = event.getBlockPos();
         var plan = previewPlan(player, target, event.getHitResult().getDirection());
+        previewTarget = target.immutable();
+        previewTick = player.level().getGameTime();
+        previewCount = plan.blocks().size();
         List<VoxelShape> outlines = plan.blocks().stream()
                 .filter(pos -> !pos.equals(target))
                 .map(pos -> event.getLevel().getBlockState(pos)
@@ -82,7 +107,7 @@ public class MultiBlockOutlineRenderer {
                 Vec3 camera = levelState.cameraRenderState.pos;
                 var vertices = buffers.getBuffer(RenderTypes.lines());
                 for (VoxelShape outline : outlines) {
-                    ShapeRenderer.renderShape(poseStack, vertices, outline, -camera.x, -camera.y, -camera.z, 0x66000000, 2.0F);
+                    ShapeRenderer.renderShape(poseStack, vertices, outline, -camera.x, -camera.y, -camera.z, 0xADBCA0E8, 2.0F);
                 }
                 if (!placements.isEmpty() || !lava.isEmpty()) {
                     var previewVertices = buffers.getBuffer(PREVIEW_LINES);

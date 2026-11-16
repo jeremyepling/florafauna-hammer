@@ -18,14 +18,14 @@ Run `/florafauna ability` with a subcommand (`lightning`, `teleport`, `throw`, `
 
 | Component | Purpose |
 |-----------|---------|
-| `MULTI_BLOCK_MINING` | Enables multi-block mining patterns |
-| `TOOL_CONFIG` | Enchantment and mining speed settings |
+| `MULTI_BLOCK_MINING` | Selected mining shape, pattern parameters and favorite shapes |
+| `TOOL_CONFIG` | Enchantment, mining speed, vein matching and auto torches |
 | `LIGHTNING_ABILITY` | Spawn lightning at target |
 | `TELEPORT_SURFACE_ABILITY` | Teleport to surface |
 | `THROWABLE_ABILITY` | Throw item as projectile |
 | `HAMMER_ACTION` | Selected right-click action |
-| `HAMMER_CHARGE` | Available blocks for charged ore strikes |
-| `RIGHT_CLICK_ACTION` | Configures which ability triggers on right-click |
+| `HAMMER_CHARGE` | Shared charge for ore strikes, Seismic Scan and Ground Slam |
+| `RIGHT_CLICK_ACTION` | Fallback ability for Auto |
 | `MULTI_TOOL_ABILITY` | Enables axe/shovel/hoe actions (strip, path, till) |
 
 ## Mining Shapes
@@ -64,21 +64,33 @@ Each Hammer remembers its settings.
 
 **Note**: Fortune and Silk Touch are mutually exclusive - exactly one is always active.
 
-## Key Bindings
+## Hammer controls
 
-| Key | Action | Component Required |
-|-----|--------|-------------------|
-| **C** | Cycle mining mode | `MULTI_BLOCK_MINING` |
-| **K** | Open the right-click action wheel and select Auto, Strip, Path, Till or Throw | `HAMMER_ACTION` |
-| **J** (hold) | Mine only the targeted block. Release to resume the selected shape. | `MULTI_BLOCK_MINING` |
-| **P** | Open tool config screen | `TOOL_CONFIG` |
-| **R** | Spawn lightning | `LIGHTNING_ABILITY` |
-| **M** | Teleport to surface | `TELEPORT_SURFACE_ABILITY` |
-| **T** | Tap to throw. Hold for one second and release for a charged Hammer throw. | `THROWABLE_ABILITY` |
+| Input | Action |
+|-------|--------|
+| Tap **C** | Cycle mining shapes in their usual order. With favorites, cycle only the starred shapes. |
+| Double-tap **C** within 250 ms | Select Single Block. This keeps your favorites and stays selected until you change modes. |
+| Hold **C** for 300 ms | Open the Hammer menu for the tool in your main hand. |
+| Right-click on the ground | Use the selected ability. |
+| Right-click off the ground | Attempt a Kinetic Ground Slam. |
+| **R** / **M** | Call lightning / teleport to the surface with the corresponding ability. |
+| Tap / hold **T** | Throw / charge an ore-mining throw. Release to throw. |
 
-These are the registered defaults. The disposable client test binds throw to **comma**. Check the current binding in Minecraft's Controls menu.
+In **Mining**, select any shape or toggle the star beside it. A new Hammer has no favorites. Removing its last star restores the full cycle. Selecting an unstarred shape leaves the stars alone. The next tap advances to the next starred shape in the usual order, wrapping as needed.
 
-Each Hammer remembers its right-click selection. **Auto** applies enabled block transformations in their usual order and then tries the configured fallback. **Strip**, **Path** and **Till** use just the selected enabled transformation. A target that cannot be transformed keeps its usual block interaction. **Throw** throws the held Hammer immediately.
+In **Abilities**, select Auto, Strip, Path, Till, Throw, Lightning, Surface Teleport or Seismic Scan. Auto tries enabled block transformations first and then the configured fallback, which is Throw on a new Hammer. Strip, Path and Till leave the usual block interaction available when the targeted block cannot be transformed. In **Settings**, change enchantment, mining speed, vein matching or auto torches. Each Hammer carries its own selections.
+
+## Seismic Scan
+
+Select **Seismic Scan**, stand on the ground and right-click. Chests, doors and other usable blocks still take their normal interaction. A violet pulse searches loaded terrain within 24 blocks for tagged ores. Up to 24 approximate deposit markers appear for the scanning player and fade after five seconds. Empty scans also spend 16 charge. The cooldown is eight seconds.
+
+The server scans the sphere in slices shared across players. It checks the common `c:ores` tag, groups face-connected ore blocks, and rounds each deposit center to a two-block grid before sending it to the owner. Scan radius, duration, cost, cooldown, and marker count are constants in `SeismicScanner`.
+
+## Kinetic Ground Slam
+
+Jump or fall with the Hammer in hand and right-click to drive downward. Landing sends a shockwave up to 4.5 blocks, dealing up to 4 HP of damage and pushing nearby hostiles away. Damage and knockback decrease with distance. The impact preserves terrain and spares friendly mobs and other players.
+
+A slam costs 12 charge and has a five-second cooldown. A failed airborne attempt consumes the click. Swimming, climbing, flying, gliding, riding and spectating prevent activation. Keep the same Hammer equipped through impact. The slam cushions two blocks of normal fall distance, so a jump is safe and a long fall can still hurt. Combat and cooldown values are constants in `GroundSlam`.
 
 ## Multi-Block Mining
 
@@ -97,7 +109,7 @@ Straight cuts advance into the face you strike. On a wall, strike the bottom of 
 
 Stair modes cut five columns with five blocks of clearance per column before placing the tread. A side hit builds ascending stairs from one block below the center, or descending stairs from two below. A floor hit in descending mode follows the player's horizontal heading. Ceiling hits and ascending floor hits mine just the center. Teal stair outlines show planned placements through rock and across air gaps before you strike.
 
-Orange outlines mark the faces of planned mining blocks that touch source or flowing lava. Check the marked side, ceiling, floor or end wall before striking. Holding the single-block key narrows this warning to the targeted block. The warning leaves the final decision to the player.
+Orange outlines mark the faces of planned mining blocks that touch source or flowing lava. Check the marked side, ceiling, floor or end wall before striking. Selecting Single Block narrows this warning to the targeted block. The mining preview shows the selected mode and planned block count. The warning leaves the final decision to the player.
 
 Shapeless mode groups matching stone and deepslate ore variants. An iron vein can cross the stone–deepslate boundary. Copper touching that vein stays in place. Select **Exact block** in the Hammer settings to stop at the variant boundary.
 
@@ -105,7 +117,7 @@ After a successful center hit, flat and tunnel swings skip air and continue thro
 
 ## Tunnel Lighting
 
-Enable **Auto torches** in the held Hammer’s settings (default **P**). After cutting a horizontal Walkable or Large Tunnel, or an ascending or descending staircase, it can place one regular torch on the right wall in the direction of travel. It checks the newly opened passage for light level 7 or below and a solid attachment. It uses the offhand torch stack first, then searches the inventory. Survival consumes one torch on successful placement. Creative requires a torch and keeps the stack.
+Enable **Auto torches** in the held Hammer’s **Settings** tab (hold **C**). After cutting a horizontal Walkable or Large Tunnel, or an ascending or descending staircase, it can place one regular torch on the right wall in the direction of travel. It checks the newly opened passage for light level 7 or below and a solid attachment. It uses the offhand torch stack first, then searches the inventory. Survival consumes one torch on successful placement. Creative requires a torch and keeps the stack.
 
 ## Charged Hammer Throw
 
@@ -115,7 +127,7 @@ A full Hammer stores 64 charge and recovers one charge per second while held in 
 
 ## Right-Click Action
 
-The `RIGHT_CLICK_ACTION` component configures which ability triggers on right-click. It stores an Identifier referencing one of the ability components.
+In Auto, the `RIGHT_CLICK_ACTION` component configures the fallback after block transformations. It stores an Identifier referencing one of the ability components.
 
 | Ability ID | Effect |
 |------------|--------|

@@ -2,6 +2,7 @@ package net.j40climb.florafauna_hammer.common.item.abilities.data;
 
 import com.google.gson.JsonObject;
 import com.mojang.serialization.JsonOps;
+import io.netty.buffer.Unpooled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -9,6 +10,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class HammerConfigTest {
@@ -16,6 +18,43 @@ class HammerConfigTest {
     void newHammerDefaults() {
         assertEquals(new MiningModeData(MiningShape.SINGLE, 0, 64, true), MiningModeData.DEFAULT);
         assertEquals(new ToolConfig(true, false, MiningSpeed.EFFICIENCY), ToolConfig.DEFAULT);
+    }
+
+    @Test
+    void favoritesFollowNormalOrderAndWrapFromANonFavorite() {
+        var mine = MiningModeData.DEFAULT.toggleFavorite(MiningShape.BORE).toggleFavorite(MiningShape.FLAT_5X5);
+        var first = mine.getNextMode();
+        assertEquals(MiningShape.FLAT_5X5, first.shape());
+        assertEquals(MiningShape.BORE, first.getNextMode().shape());
+        assertEquals(first, first.getNextMode().getNextMode());
+
+        var direct = first.withShape(MiningShape.SINGLE);
+        assertFalse(direct.isFavorite(MiningShape.SINGLE));
+        assertEquals(first, direct.getNextMode());
+        var custom = mine.withShape(MiningShape.TUNNEL_UP);
+        assertEquals(MiningShape.BORE, custom.getNextMode().shape());
+    }
+
+    @Test
+    void removingLastFavoriteRestoresFullCycleImmediately() {
+        var mine = MiningModeData.DEFAULT.toggleFavorite(MiningShape.BORE).getNextMode();
+        assertEquals(mine, mine.getNextMode());
+        assertEquals(MiningModeData.DEFAULT, mine.toggleFavorite(MiningShape.BORE).getNextMode());
+    }
+
+    @Test
+    void mineAndFavoritesSurviveBothSaveAndNetwork() {
+        var mine = MiningModeData.DEFAULT.withShape(MiningShape.TUNNEL_UP).toggleFavorite(MiningShape.BORE);
+        var encoded = MiningModeData.CODEC.encodeStart(JsonOps.INSTANCE, mine).getOrThrow();
+        assertEquals(mine, MiningModeData.CODEC.parse(JsonOps.INSTANCE, encoded).getOrThrow());
+        var buffer = Unpooled.buffer();
+        try {
+            MiningModeData.STREAM_CODEC.encode(buffer, mine);
+            assertEquals(mine, MiningModeData.STREAM_CODEC.decode(buffer));
+            assertEquals(0, buffer.readableBytes());
+        } finally {
+            buffer.release();
+        }
     }
 
     @ParameterizedTest

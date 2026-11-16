@@ -34,14 +34,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Event handler that intercepts right-click interactions and executes abilities
- * based on data components on the held item.
- *
- * Priority order:
- * 1. Multi-tool modifications (strip/path/till) if MULTI_TOOL_ABILITY component present
- * 2. RIGHT_CLICK_ACTION ability if component present
- */
+/** Airborne Hammers slam. Grounded tools use their selected action or Auto's component fallback. */
 @EventBusSubscriber(modid = HammerMod.MOD_ID)
 public class RightClickActionHandler {
 
@@ -79,33 +72,61 @@ public class RightClickActionHandler {
         }
     }
 
-    /**
-     * Common handler for right-click interactions.
-     * First tries multi-tool modifications, then falls back to RIGHT_CLICK_ACTION ability.
-     *
-     * @param player the player performing the interaction
-     * @param hand the hand used for the interaction
-     * @param clickedPos the position of the clicked block, or null if right-clicking in air
-     * @param hitResult the block hit result, or null if right-clicking in air
-     * @return true if an action was executed and the event should be canceled
-     */
+    @SubscribeEvent
+    public static void onEntityInteractSpecific(PlayerInteractEvent.EntityInteractSpecific event) {
+        if (attemptAirborneSlam(event.getEntity(), event.getHand())) {
+            event.setCancellationResult(InteractionResult.SUCCESS);
+            event.setCanceled(true);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
+        if (attemptAirborneSlam(event.getEntity(), event.getHand())) {
+            event.setCancellationResult(InteractionResult.SUCCESS);
+            event.setCanceled(true);
+        }
+    }
+
+    private static boolean attemptAirborneSlam(Player player, InteractionHand hand) {
+        if (player.onGround() || !player.getItemInHand(hand).is(HammerRegistry.HAMMER)) return false;
+        if (player instanceof ServerPlayer serverPlayer) GroundSlam.activate(serverPlayer, hand);
+        return true;
+    }
+
     private static boolean handleRightClick(Player player, InteractionHand hand, @Nullable BlockPos clickedPos, @Nullable BlockHitResult hitResult) {
+        if (attemptAirborneSlam(player, hand)) return true;
         ItemStack stack = player.getItemInHand(hand);
         HammerAction selected = stack.getOrDefault(HammerRegistry.HAMMER_ACTION, HammerAction.AUTO);
-        if (player.level().isClientSide()) {
-            // Consume an explicit throw locally too, so block use cannot also open a GUI or try an air click.
-            return selected == HammerAction.THROW && stack.has(HammerRegistry.THROWABLE_ABILITY);
+        ServerPlayer serverPlayer = player instanceof ServerPlayer server ? server : null;
+        switch (selected) {
+            case SCAN -> {
+                // HammerItem.useOn runs after the block gets its normal interaction.
+                if (clickedPos != null || !stack.is(HammerRegistry.HAMMER)) return false;
+                if (serverPlayer != null) SeismicScanner.activate(serverPlayer, hand);
+                return true;
+            }
+            case THROW -> {
+                if (!stack.has(HammerRegistry.THROWABLE_ABILITY)) return false;
+                if (serverPlayer != null) ThrowItemPayload.throwItem(serverPlayer, hand);
+                return true;
+            }
+            case LIGHTNING -> {
+                if (!stack.has(HammerRegistry.LIGHTNING_ABILITY)) return false;
+                if (serverPlayer != null) {
+                    BlockPos target = clickedPos != null ? clickedPos : SpawnLightningPayload.targetFromView(player);
+                    if (player.level().hasChunkAt(target)) SpawnLightningPayload.spawnLightningBolt(player.level(), target);
+                }
+                return true;
+            }
+            case TELEPORT -> {
+                if (!stack.has(HammerRegistry.TELEPORT_SURFACE_ABILITY)) return false;
+                if (serverPlayer != null) TeleportToSurfacePayload.teleportToSurface(serverPlayer);
+                return true;
+            }
         }
-        if (!(player instanceof ServerPlayer serverPlayer)) {
-            return false;
-        }
-
+        if (serverPlayer == null) return false;
         long currentTick = player.level().getGameTime();
-        if (selected == HammerAction.THROW) {
-            if (!stack.has(HammerRegistry.THROWABLE_ABILITY)) return false;
-            ThrowItemPayload.throwItem(serverPlayer, hand);
-            return true;
-        }
 
         // Priority 1: Try multi-tool modifications if targeting a block
         if (clickedPos != null && hitResult != null) {

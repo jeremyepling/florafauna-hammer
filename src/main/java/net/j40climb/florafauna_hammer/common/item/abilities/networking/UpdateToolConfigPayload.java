@@ -6,6 +6,7 @@ import net.j40climb.florafauna_hammer.common.item.abilities.data.ToolConfig;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.core.Holder;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
@@ -20,20 +21,23 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
  * Sent from client to server when the player changes config settings.
  * Works with any item that has the TOOL_CONFIG data component.
  */
-public record UpdateToolConfigPayload(ToolConfig config) implements CustomPacketPayload {
+public record UpdateToolConfigPayload(int slot, ToolConfig config) implements CustomPacketPayload {
 
     public static final Type<UpdateToolConfigPayload> TYPE = new Type<>(
             Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "update_tool_config")
     );
 
     public static final StreamCodec<ByteBuf, UpdateToolConfigPayload> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.VAR_INT, UpdateToolConfigPayload::slot,
             ToolConfig.STREAM_CODEC,
             UpdateToolConfigPayload::config,
             UpdateToolConfigPayload::new
     );
 
     public static void onServerReceived(final UpdateToolConfigPayload data, final IPayloadContext context) {
-        applyToHeldItem(context.player(), data.config);
+        if (context.player().getInventory().getSelectedSlot() == data.slot) {
+            applyToHeldItem(context.player(), data.config);
+        }
     }
 
     public static void applyToHeldItem(Player player, ToolConfig config) {

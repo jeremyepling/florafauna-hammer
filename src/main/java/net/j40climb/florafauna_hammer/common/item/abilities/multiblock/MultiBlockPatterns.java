@@ -53,9 +53,6 @@ public final class MultiBlockPatterns {
         if (!isMineable(level, player, tool, mode, center)) {
             return new Plan(List.of(), List.of(), face);
         }
-        if (Boolean.TRUE.equals(player.getExistingDataOrNull(HammerRegistry.PRECISION_MINING))) {
-            return new Plan(List.of(center), List.of(), face);
-        }
         return switch (mode.shape()) {
             case SINGLE -> new Plan(List.of(center), List.of(), face);
             case FLAT_3X3, FLAT_5X5, FLAT_7X7 -> {

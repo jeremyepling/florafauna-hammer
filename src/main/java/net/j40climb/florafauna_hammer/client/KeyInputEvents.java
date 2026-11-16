@@ -1,11 +1,7 @@
 package net.j40climb.florafauna_hammer.client;
 
 import net.j40climb.florafauna_hammer.HammerMod;
-import net.j40climb.florafauna_hammer.common.item.abilities.menu.ToolConfigScreen;
-import net.j40climb.florafauna_hammer.common.item.abilities.menu.HammerActionWheel;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.CycleMiningModePayload;
-import net.j40climb.florafauna_hammer.common.item.abilities.networking.PrecisionMiningPayload;
-import net.j40climb.florafauna_hammer.common.item.abilities.multiblock.MultiBlockVisualFeedback;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.SpawnLightningPayload;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.TeleportToSurfacePayload;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.ThrowItemPayload;
@@ -13,18 +9,20 @@ import net.j40climb.florafauna_hammer.common.item.abilities.networking.ChargedTh
 import net.j40climb.florafauna_hammer.setup.ClientSetup;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.client.Minecraft;
+import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningShape;
+import net.j40climb.florafauna_hammer.common.item.abilities.menu.HammerMenuScreen;
+import net.j40climb.florafauna_hammer.common.item.abilities.networking.SelectMiningModePayload;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.bus.api.EventPriority;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.InputEvent;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
-import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 
 @EventBusSubscriber(modid = HammerMod.MOD_ID, value = Dist.CLIENT)
 public class KeyInputEvents {
@@ -64,31 +62,75 @@ public class KeyInputEvents {
         }
     }
 
+    private static final HammerControlGesture gesture = new HammerControlGesture();
+    private static Player gesturePlayer;
+    private static int gestureSlot = -1;
+    private static boolean wasDown;
+    private static boolean waitForRelease;
+
+    // Observe physical edges before another input can arrive in the same tick. Tick polling also
+    // supports injected key mappings and fires deadlines while the keyboard is idle.
     @SubscribeEvent
-    public static void beforeClientTick(ClientTickEvent.Pre event) {
-        updatePrecision(Minecraft.getInstance());
+    public static void onControlKey(InputEvent.Key event) {
+        if (ClientSetup.CYCLE_MINING_MODE_KEY.get().matches(event.getKeyEvent())) updateControl(Minecraft.getInstance());
     }
 
-    // Sync before the vanilla mining packet, including a press and an instant break in the same tick.
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
-    public static void beforeMining(PlayerInteractEvent.LeftClickBlock event) {
-        if (event.getEntity().level().isClientSide()) updatePrecision(Minecraft.getInstance());
+    @SubscribeEvent
+    public static void onControlMouse(InputEvent.MouseButton.Post event) {
+        if (ClientSetup.CYCLE_MINING_MODE_KEY.get().getKey().equals(InputConstants.Type.MOUSE.getOrCreate(event.getButton()))) {
+            updateControl(Minecraft.getInstance());
+        }
     }
 
-    private static void updatePrecision(Minecraft mc) {
-        if (mc.player == null || mc.getConnection() == null) return;
-        boolean held = mc.screen == null && ClientSetup.PRECISION_MINING_KEY.get().isDown()
-                && mc.player.getMainHandItem().has(HammerRegistry.MULTI_BLOCK_MINING);
-        // A new local player must also initialize its server state after respawn or a level change.
-        if (Boolean.valueOf(held).equals(mc.player.getExistingDataOrNull(HammerRegistry.PRECISION_MINING))) return;
-        mc.player.setData(HammerRegistry.PRECISION_MINING, held);
-        ClientPacketDistributor.sendToServer(new PrecisionMiningPayload(held));
-        MultiBlockVisualFeedback.invalidatePattern(mc.player);
+    private static void updateControl(Minecraft mc) {
+        var key = ClientSetup.CYCLE_MINING_MODE_KEY.get();
+        var player = mc.player;
+        boolean down = key.isDown();
+        int clicks = 0;
+        while (key.consumeClick()) clicks++;
+
+        int slot = player == null ? -1 : player.getInventory().getSelectedSlot();
+        var held = player == null ? ItemStack.EMPTY : player.getMainHandItem();
+        boolean usable = held.has(HammerRegistry.MULTI_BLOCK_MINING) || held.has(HammerRegistry.HAMMER_ACTION)
+                || held.has(HammerRegistry.TOOL_CONFIG);
+        if (player != gesturePlayer || slot != gestureSlot || mc.screen != null || !usable) {
+            gesture.reset();
+            waitForRelease = down && (wasDown || mc.screen != null || !usable);
+            wasDown = false;
+            gesturePlayer = player;
+            gestureSlot = slot;
+        }
+        if (!down) waitForRelease = false;
+        if (mc.screen != null || !usable || waitForRelease) return;
+
+        long now = System.nanoTime() / 1_000_000L;
+        if (wasDown && !down) dispatch(mc, gesture.release(now));
+        // A quick physical press and release can both occur between client ticks.
+        if (!down) {
+            for (int i = 0; i < clicks; i++) {
+                dispatch(mc, gesture.press(now));
+                dispatch(mc, gesture.release(now));
+            }
+        } else if (!wasDown) {
+            dispatch(mc, gesture.press(now));
+        }
+        dispatch(mc, gesture.advance(now));
+        wasDown = down;
+    }
+
+    private static void dispatch(Minecraft mc, HammerControlGesture.Action action) {
+        switch (action) {
+            case NONE -> { }
+            case CYCLE -> ClientPacketDistributor.sendToServer(CycleMiningModePayload.INSTANCE);
+            case SINGLE -> ClientPacketDistributor.sendToServer(new SelectMiningModePayload(gestureSlot, MiningShape.SINGLE, false));
+            case MENU -> mc.setScreen(new HammerMenuScreen(gestureSlot, mc.player.getMainHandItem()));
+        }
     }
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
+        updateControl(mc);
         Player player = mc.player;
         if (player == null)
             return;
@@ -108,23 +150,6 @@ public class KeyInputEvents {
                 ClientPacketDistributor.sendToServer(TeleportToSurfacePayload.INSTANCE);
             }
         }
-        while (ClientSetup.HAMMER_CONFIG_KEY.get().consumeClick()) {
-            // Component-based check - works with any item that has TOOL_CONFIG
-            if (itemStack.has(HammerRegistry.TOOL_CONFIG)) {
-                mc.setScreen(new ToolConfigScreen());
-            }
-        }
         updateThrowKey(mc, itemStack);
-        while (ClientSetup.CYCLE_MINING_MODE_KEY.get().consumeClick()) {
-            // Component-based check - works with any item that has MULTI_BLOCK_MINING
-            if (itemStack.has(HammerRegistry.MULTI_BLOCK_MINING)) {
-                ClientPacketDistributor.sendToServer(CycleMiningModePayload.INSTANCE);
-            }
-        }
-        while (ClientSetup.HAMMER_ACTION_WHEEL_KEY.get().consumeClick()) {
-            if (mc.screen == null && itemStack.has(HammerRegistry.HAMMER_ACTION)) {
-                mc.setScreen(new HammerActionWheel(player.getInventory().getSelectedSlot(), itemStack));
-            }
-        }
     }
 }

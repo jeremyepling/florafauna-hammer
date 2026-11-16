@@ -30,6 +30,7 @@ import net.neoforged.neoforge.registries.*;
 import java.util.function.Supplier;
 
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.ChargedThrowPayload;
+import net.j40climb.florafauna_hammer.common.item.abilities.GroundSlam;
 
 import static net.j40climb.florafauna_hammer.common.item.hammer.HammerItem.HAMMER_MATERIAL;
 
@@ -77,6 +78,10 @@ public final class HammerRegistry {
     public static final Supplier<AttachmentType<ChargedThrowPayload.Hold>> THROW_HOLD = ATTACHMENT_TYPES.register("throw_hold",
             () -> AttachmentType.builder(() -> new ChargedThrowPayload.Hold(ItemStack.EMPTY, net.minecraft.world.level.Level.OVERWORLD, 0)).build());
 
+    public static final Supplier<AttachmentType<GroundSlam.Pending>> PENDING_SLAM = ATTACHMENT_TYPES.register("pending_slam",
+            () -> AttachmentType.builder(() -> new GroundSlam.Pending(ItemStack.EMPTY, net.minecraft.world.InteractionHand.MAIN_HAND,
+                    net.minecraft.world.level.Level.OVERWORLD, 0)).build());
+
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<ThrowableAbilityData>> THROWABLE_ABILITY =
             DATA_COMPONENTS.registerComponentType("throwable_ability",
                     builder -> builder.persistent(ThrowableAbilityData.CODEC).networkSynchronized(ThrowableAbilityData.STREAM_CODEC));
@@ -92,9 +97,6 @@ public final class HammerRegistry {
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<MultiToolAbilityData>> MULTI_TOOL_ABILITY =
             DATA_COMPONENTS.registerComponentType("multi_tool_ability",
                     builder -> builder.persistent(MultiToolAbilityData.CODEC).networkSynchronized(MultiToolAbilityData.STREAM_CODEC));
-
-    public static final Supplier<AttachmentType<Boolean>> PRECISION_MINING = ATTACHMENT_TYPES.register("precision_mining",
-            () -> AttachmentType.builder(() -> false).build());
 
     public static void register(IEventBus bus) {
         ITEMS.register(bus);

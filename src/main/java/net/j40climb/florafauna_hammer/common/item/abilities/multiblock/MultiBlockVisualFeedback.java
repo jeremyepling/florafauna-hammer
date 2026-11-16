@@ -1,6 +1,7 @@
 package net.j40climb.florafauna_hammer.common.item.abilities.multiblock;
 
 import net.j40climb.florafauna_hammer.HammerMod;
+import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningModeData;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -21,7 +22,7 @@ public final class MultiBlockVisualFeedback {
     private static Direction hitFace = Direction.UP;
     private static int ticksMining;
     private static List<BlockPos> cracks = List.of();
-    private static boolean refreshCracks;
+    private static MiningModeData crackMode;
 
     private MultiBlockVisualFeedback() {}
 
@@ -42,8 +43,10 @@ public final class MultiBlockVisualFeedback {
                     clear(player);
                     return;
                 }
-                if (ticksMining == 0 || refreshCracks) {
-                    refreshCracks = false;
+                var mode = event.getItemStack().get(HammerRegistry.MULTI_BLOCK_MINING);
+                if (ticksMining == 0 || !mode.equals(crackMode)) {
+                    draw(player, -1);
+                    crackMode = mode;
                     cracks = MultiBlockPatterns.plan(player, event.getItemStack(), target, hitFace).blocks().stream()
                             .filter(pos -> !pos.equals(target)).toList();
                 }
@@ -75,12 +78,6 @@ public final class MultiBlockVisualFeedback {
         draw(player, -1);
         cracks = List.of();
         ticksMining = 0;
-    }
-
-    public static void invalidatePattern(Player player) {
-        draw(player, -1);
-        cracks = List.of();
-        refreshCracks = true;
     }
 
     private static void draw(Player player, int stage) {

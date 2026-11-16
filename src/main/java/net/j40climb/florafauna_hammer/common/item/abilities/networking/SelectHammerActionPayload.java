@@ -21,7 +21,8 @@ public record SelectHammerActionPayload(int slot, HammerAction action) implement
     public static void onServerReceived(SelectHammerActionPayload payload, IPayloadContext context) {
         Player player = context.player();
         var stack = player.getMainHandItem();
-        if (player.getInventory().getSelectedSlot() == payload.slot && stack.has(HammerRegistry.HAMMER_ACTION)) {
+        if (player.getInventory().getSelectedSlot() == payload.slot && stack.has(HammerRegistry.HAMMER_ACTION)
+                && payload.action.availableOn(stack)) {
             stack.set(HammerRegistry.HAMMER_ACTION, payload.action);
         }
     }

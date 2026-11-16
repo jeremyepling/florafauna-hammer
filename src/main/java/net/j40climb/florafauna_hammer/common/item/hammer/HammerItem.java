@@ -15,6 +15,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.util.Unit;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.server.level.ServerPlayer;
+import net.j40climb.florafauna_hammer.common.item.abilities.SeismicScanner;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemInstance;
 import net.minecraft.world.item.ItemStack;
@@ -81,6 +85,16 @@ public class HammerItem extends Item {
                 .component(HammerRegistry.HAMMER_ACTION, HammerAction.AUTO)
                 .component(DataComponents.UNBREAKABLE, Unit.INSTANCE)
         );
+    }
+
+    @Override
+    public InteractionResult useOn(UseOnContext context) {
+        if (context.getPlayer() == null || !context.getPlayer().onGround()
+                || context.getItemInHand().get(HammerRegistry.HAMMER_ACTION) != HammerAction.SCAN) {
+            return super.useOn(context);
+        }
+        if (context.getPlayer() instanceof ServerPlayer player) SeismicScanner.activate(player, context.getHand());
+        return InteractionResult.SUCCESS;
     }
 
     /**

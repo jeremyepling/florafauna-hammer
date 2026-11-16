@@ -34,7 +34,7 @@ class HammerVeinConfigTest {
         var encoded = ToolConfig.CODEC.encodeStart(JsonOps.INSTANCE, config).getOrThrow();
         assertEquals(config, ToolConfig.CODEC.parse(JsonOps.INSTANCE, encoded).getOrThrow());
 
-        var packet = new UpdateToolConfigPayload(config);
+        var packet = new UpdateToolConfigPayload(3, config);
         var buffer = Unpooled.buffer();
         try {
             UpdateToolConfigPayload.STREAM_CODEC.encode(buffer, packet);

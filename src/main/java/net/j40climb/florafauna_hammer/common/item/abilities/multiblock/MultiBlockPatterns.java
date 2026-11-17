@@ -48,7 +48,7 @@ public final class MultiBlockPatterns {
     }
 
     public static Plan plan(Player player, ItemStack tool, BlockPos center, Direction face) {
-        MiningModeData mode = tool.getOrDefault(HammerRegistry.MULTI_BLOCK_MINING, MiningModeData.DEFAULT);
+        MiningModeData mode = MiningModeData.effective(tool);
         Level level = player.level();
         if (!isMineable(level, player, tool, mode, center)) {
             return new Plan(List.of(), List.of(), face);

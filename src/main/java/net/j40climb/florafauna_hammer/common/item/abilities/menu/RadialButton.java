@@ -57,7 +57,7 @@ final class RadialButton extends Button {
         return true;
     }
 
-    private boolean contains(double x, double y) {
+    boolean contains(double x, double y) {
         double dx = x - cx, dy = y - cy;
         double r2 = dx * dx + dy * dy;
         if (r2 < inner * inner || r2 >= outer * outer) return false;
@@ -85,7 +85,7 @@ final class RadialButton extends Button {
     protected void extractContents(GuiGraphicsExtractor gui, int mouseX, int mouseY, float partialTick) {
         isHovered = contains(mouseX, mouseY);
         boolean highlighted = active && (isHovered || isFocused());
-        int rim = selected ? 0xffffcc72 : highlighted ? 0xffdfb8ff : 0xff79678e;
+        int rim = !active ? 0xff514958 : selected ? 0xffffcc72 : highlighted ? 0xffdfb8ff : 0xff79678e;
         int face = !active ? 0xed25232c : highlighted ? 0xf7563c6d : selected ? 0xf548374b : 0xee302836;
         var pose = new Matrix3x2f(gui.pose());
         var bounds = new ScreenRectangle(cx - outer, cy - outer, outer * 2, outer * 2).transformMaxBounds(pose);
@@ -107,7 +107,13 @@ final class RadialButton extends Button {
         int y = getY() + 8 - (iconHeight + (lines.size() + details.size()) * font.lineHeight) / 2;
         if (!icon.isEmpty()) {
             gui.item(icon, x - 8, y);
-            if (favorite) gui.text(font, "★", x + 9, y, 0xffffd778);
+            if (!active) {
+                // Draw a small closed padlock, also readable at compact GUI scales.
+                gui.fill(x + 4, y + 8, x + 10, y + 14, 0xff28232d);
+                gui.outline(x + 5, y + 5, 4, 6, 0xffc4bcca);
+                gui.fill(x + 4, y + 9, x + 10, y + 14, 0xffc4bcca);
+            }
+            if (favorite && active) gui.text(font, "★", x + 9, y, 0xffffd778);
             y += iconHeight;
         }
         for (var line : lines) {

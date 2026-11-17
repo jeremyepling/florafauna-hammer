@@ -13,6 +13,7 @@ import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningShape;
 import net.j40climb.florafauna_hammer.common.item.abilities.menu.HammerMenuScreen;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.SelectMiningModePayload;
 import net.minecraft.core.BlockPos;
+import net.j40climb.florafauna_hammer.common.item.abilities.data.HammerAction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -177,14 +178,14 @@ public class KeyInputEvents {
         // The key mappings have to be consumed during the event or it will replay the event on each tick. Don't check anything for this outside of player null
         while (ClientSetup.SUMMON_LIGHTNING_KEY.get().consumeClick()) {
             // Component-based check - works with any item that has LIGHTNING_ABILITY
-            if (itemStack.has(HammerRegistry.LIGHTNING_ABILITY)) {
+            if (HammerAction.LIGHTNING.availableOn(itemStack)) {
                 BlockPos targetPos = SpawnLightningPayload.targetFromView(player);
                 ClientPacketDistributor.sendToServer(new SpawnLightningPayload(targetPos));
             }
         }
         while (ClientSetup.TELEPORT_SURFACE_KEY.get().consumeClick()) {
             // Component-based check - works with any item that has TELEPORT_SURFACE_ABILITY
-            if (itemStack.has(HammerRegistry.TELEPORT_SURFACE_ABILITY)) {
+            if (HammerAction.TELEPORT.availableOn(itemStack)) {
                 ClientPacketDistributor.sendToServer(TeleportToSurfacePayload.INSTANCE);
             }
         }

@@ -32,6 +32,8 @@ import java.util.function.Supplier;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.ChargedThrowPayload;
 import net.j40climb.florafauna_hammer.common.item.abilities.GroundSlam;
 
+import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
+
 import static net.j40climb.florafauna_hammer.common.item.hammer.HammerItem.HAMMER_MATERIAL;
 
 public final class HammerRegistry {
@@ -52,12 +54,19 @@ public final class HammerRegistry {
                     .updateInterval(20)
                     .build(THROWN_ITEM_KEY));
 
+    public static final DeferredItem<Item> RESONANCE_CORE = ITEMS.registerSimpleItem("resonance_core");
+    public static final DeferredItem<Item> TEMPEST_CORE = ITEMS.registerSimpleItem("tempest_core");
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<HammerStage>> HAMMER_STAGE =
+            DATA_COMPONENTS.registerComponentType("hammer_stage",
+                    builder -> builder.persistent(HammerStage.CODEC).networkSynchronized(HammerStage.STREAM_CODEC));
+
     public static final DeferredItem<Item> HAMMER = ITEMS.registerItem("hammer", properties ->
             new HammerItem(properties.tool(HAMMER_MATERIAL, BlockTags.MINEABLE_WITH_PICKAXE, 8, -2.4f, 0)));
 
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<MiningModeData>> MULTI_BLOCK_MINING =
             DATA_COMPONENTS.registerComponentType("multi_block_mining",
-                    builder -> builder.persistent(MiningModeData.CODEC).networkSynchronized(MiningModeData.STREAM_CODEC));
+                    builder -> builder.persistent(MiningModeData.CODEC).networkSynchronized(MiningModeData.STREAM_CODEC).ignoreSwapAnimation());
 
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<ToolConfig>> TOOL_CONFIG =
             DATA_COMPONENTS.registerComponentType("tool_config",
@@ -72,8 +81,8 @@ public final class HammerRegistry {
                     builder -> builder.persistent(Unit.CODEC).networkSynchronized(StreamCodec.unit(Unit.INSTANCE)));
 
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> HAMMER_CHARGE =
-            DATA_COMPONENTS.registerComponentType("hammer_charge", b -> b.persistent(Codec.intRange(0, HammerItem.MAX_CHARGE))
-                    .networkSynchronized(ByteBufCodecs.VAR_INT));
+            DATA_COMPONENTS.registerComponentType("hammer_charge", b -> b.persistent(Codec.intRange(0, HammerStage.TEMPEST.capacity()))
+                    .networkSynchronized(ByteBufCodecs.VAR_INT).ignoreSwapAnimation());
 
     public static final Supplier<AttachmentType<ChargedThrowPayload.Hold>> THROW_HOLD = ATTACHMENT_TYPES.register("throw_hold",
             () -> AttachmentType.builder(() -> new ChargedThrowPayload.Hold(ItemStack.EMPTY, net.minecraft.world.level.Level.OVERWORLD, 0)).build());
@@ -92,7 +101,7 @@ public final class HammerRegistry {
 
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<HammerAction>> HAMMER_ACTION =
             DATA_COMPONENTS.registerComponentType("hammer_action",
-                    builder -> builder.persistent(HammerAction.CODEC).networkSynchronized(HammerAction.STREAM_CODEC));
+                    builder -> builder.persistent(HammerAction.CODEC).networkSynchronized(HammerAction.STREAM_CODEC).ignoreSwapAnimation());
 
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<MultiToolAbilityData>> MULTI_TOOL_ABILITY =
             DATA_COMPONENTS.registerComponentType("multi_tool_ability",

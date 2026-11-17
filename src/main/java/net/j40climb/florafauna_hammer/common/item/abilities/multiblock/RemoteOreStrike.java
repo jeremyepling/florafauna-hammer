@@ -3,6 +3,7 @@ package net.j40climb.florafauna_hammer.common.item.abilities.multiblock;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningModeData;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningShape;
 import net.j40climb.florafauna_hammer.common.item.hammer.HammerItem;
+import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.ToolConfig;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.core.BlockPos;
@@ -26,7 +27,7 @@ public final class RemoteOreStrike {
     public static void hit(ServerPlayer owner, ItemStack hammer, BlockPos origin) {
         var level = owner.level();
         int charge = HammerItem.charge(hammer);
-        if (!owner.isAlive() || owner.isSpectator() || !hammer.is(HammerRegistry.HAMMER.get()) || charge == 0
+        if (!owner.isAlive() || owner.isSpectator() || !hammer.is(HammerRegistry.HAMMER.get()) || HammerStage.of(hammer) == HammerStage.FORGED || charge == 0
                 || !MultiBlockPatterns.canInteract(level, owner, origin) || !level.getBlockState(origin).is(Tags.Blocks.ORES)) return;
         var settings = hammer.getOrDefault(HammerRegistry.MULTI_BLOCK_MINING, MiningModeData.DEFAULT);
         var vein = new MiningModeData(MiningShape.SHAPELESS, MiningShape.SHAPELESS.getRadius(),

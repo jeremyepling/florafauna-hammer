@@ -2,15 +2,18 @@ package net.j40climb.florafauna_hammer.playtest;
 
 import net.j40climb.florafauna_hammer.common.item.abilities.data.HammerAction;
 import net.j40climb.florafauna_hammer.common.item.hammer.HammerItem;
+import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
+import net.j40climb.florafauna_hammer.setup.ClientSetup;
 import net.minecraft.client.CameraType;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.gui.screens.inventory.ContainerScreen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.monster.zombie.Husk;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.BlockHitResult;
@@ -39,7 +42,7 @@ final class HammerPowerPlaytest {
             p.setGameMode(GameType.SURVIVAL);
             p.getInventory().clearContent();
             p.getInventory().setSelectedSlot(0);
-            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(HammerRegistry.HAMMER.get()));
+            p.setItemInHand(InteractionHand.MAIN_HAND, HammerStage.RESONANT.createStack());
             p.teleportTo(level, 0.5, 201, 0.5, Set.of(), 0f, 0f, true);
         });
         t.awaitClient("Hold a fresh Hammer facing the scanner wall", mc ->
@@ -67,6 +70,7 @@ final class HammerPowerPlaytest {
         });
         t.awaitServer("Spend 16 scanner charge", p -> HammerItem.charge(p.getMainHandItem()) == 48
                 || HammerItem.charge(p.getMainHandItem()) == 49);
+        t.screenshot("resonant-seismic-pulse-first");
         t.awaitClient("Allow the pulse to cross the wall", mc -> mc.level.getGameTime() >= fired[0] + 38);
         t.screenshot("seismic-echo");
         t.awaitClient("Allow the deposit echo to expire", mc -> mc.level.getGameTime() >= fired[0] + 155);
@@ -84,9 +88,16 @@ final class HammerPowerPlaytest {
             target[0].setPos(p.position().add(2, 0, 0));
             target[0].setNoAi(true);
             p.level().addFreshEntity(target[0]);
-            p.getMainHandItem().set(HammerRegistry.HAMMER_CHARGE, 64);
+            var tempest = HammerStage.TEMPEST.createStack();
+            tempest.set(HammerRegistry.HAMMER_CHARGE, 64);
+            tempest.set(HammerRegistry.HAMMER_ACTION, HammerAction.SCAN);
+            p.setItemInHand(InteractionHand.MAIN_HAND, tempest);
         });
-        t.client("Jump from the scanner platform", mc -> mc.options.keyJump.setDown(true));
+        t.client("Frame the approaching shockwave and jump from the scanner platform", mc -> {
+            mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
+            mc.player.setXRot(24);
+            mc.options.keyJump.setDown(true);
+        });
         t.awaitClient("Use the selected scanner while jumping", mc -> {
             if (mc.player.onGround() || mc.player.getY() < 201.5) return false;
             mc.options.keyJump.setDown(false);
@@ -97,6 +108,20 @@ final class HammerPowerPlaytest {
                 && !p.hasData(HammerRegistry.PENDING_SLAM) && HammerItem.charge(p.getMainHandItem()) >= 52
                 && HammerItem.charge(p.getMainHandItem()) <= 54 && p.level().getBlockState(p.getOnPos()).is(Blocks.GRAY_CONCRETE));
         t.screenshot("kinetic-impact");
+        t.server("Build a ranged lightning target away from the player", p -> {
+            p.level().setBlockAndUpdate(new BlockPos(8, 202, 0), Blocks.OBSIDIAN.defaultBlockState());
+            p.teleportTo(p.level(), 0.5, 201, 0.5, Set.of(), -90f, 0f, true);
+        });
+        t.client("Restore first person for the lightning discharge", mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
+        t.awaitClient("Aim down the lightning lane", mc -> mc.player.getYRot() == -90f
+                && mc.level.getBlockState(new BlockPos(8, 202, 0)).is(Blocks.OBSIDIAN));
+        t.client("Activate lightning with the mapped key", mc -> KeyMapping.click(ClientSetup.SUMMON_LIGHTNING_KEY.get().getKey()));
+        t.awaitClient("Observe a real bolt in the target lane", mc -> !mc.level.getEntitiesOfClass(
+                LightningBolt.class, mc.player.getBoundingBox().inflate(12)).isEmpty());
+        t.screenshot("tempest-lightning-discharge-first");
+        t.server("Prepare a full Tempest Hammer for a charged ore strike", p ->
+                p.getMainHandItem().set(HammerRegistry.HAMMER_CHARGE, HammerStage.TEMPEST.capacity()));
+        ChargedHammerPlaytest.steps(t);
     }
 
     private static int echoPixels(Path path, Vec3 projected) {

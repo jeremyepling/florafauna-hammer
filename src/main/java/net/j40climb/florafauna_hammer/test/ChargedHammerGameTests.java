@@ -10,6 +10,7 @@ import net.j40climb.florafauna_hammer.common.item.abilities.multiblock.RemoteOre
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.ChargedThrowPayload;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.UpdateToolConfigPayload;
 import net.j40climb.florafauna_hammer.common.item.hammer.HammerItem;
+import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -55,7 +56,7 @@ final class ChargedHammerGameTests {
     private static ServerPlayer player(GameTestHelper h, boolean creative) {
         var p = new FakePlayer(h.getLevel(), new GameProfile(UUID.randomUUID(), "charge-test"));
         p.setGameMode(creative ? GameType.CREATIVE : GameType.SURVIVAL);
-        p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(HammerRegistry.HAMMER.get()));
+        p.setItemInHand(InteractionHand.MAIN_HAND, HammerStage.RESONANT.createStack());
         return p;
     }
 
@@ -78,7 +79,7 @@ final class ChargedHammerGameTests {
             rock(p, center.north(), Blocks.IRON_ORE);
             RemoteOreStrike.hit(p, hammer, center);
             int count = exact ? 1 : 2;
-            h.assertTrue(HammerItem.charge(hammer) == HammerItem.MAX_CHARGE - count, "Only successful blocks should cost charge");
+            h.assertTrue(HammerItem.charge(hammer) == HammerStage.RESONANT.capacity() - count, "Only successful blocks should cost charge");
             h.assertTrue(p.getMainHandItem() == selected, "Hotbar stack was replaced");
             h.assertTrue(p.level().isEmptyBlock(center) && p.level().isEmptyBlock(center.east()) != exact
                     && p.level().getBlockState(center.east(2)).is(Blocks.DIAMOND_ORE)
@@ -159,14 +160,14 @@ final class ChargedHammerGameTests {
             p.setItemInHand(InteractionHand.MAIN_HAND, held);
             restored.tick();
             h.assertTrue(p.level().isEmptyBlock(center) && p.level().isEmptyBlock(center.east()), "Reloaded charged throw did not strike the vein");
-            h.assertTrue(HammerItem.charge(restored.getThrownItem()) == HammerItem.MAX_CHARGE - 2, "Projectile did not retain the debit");
+            h.assertTrue(HammerItem.charge(restored.getThrownItem()) == HammerStage.RESONANT.capacity() - 2, "Projectile did not retain the debit");
             restored.setPos(p.getEyePosition().add(0, 0, 0.5));
             restored.tick();
             h.assertTrue(restored.isRemoved() && p.getMainHandItem() == held, "Return displaced the current stack");
             int count = 0;
             for (ItemStack stack : p.getInventory().getNonEquipmentItems()) {
                 if (stack.is(HammerRegistry.HAMMER.get())) {
-                    h.assertTrue(HammerItem.charge(stack) == HammerItem.MAX_CHARGE - 2, "Charge changed on return");
+                    h.assertTrue(HammerItem.charge(stack) == HammerStage.RESONANT.capacity() - 2, "Charge changed on return");
                     count += stack.getCount();
                 }
             }
@@ -224,7 +225,7 @@ final class ChargedHammerGameTests {
         }
         h.assertTrue(HammerItem.charge(hammer) == 41, "Held recharge must add one per second");
         ChargedThrowPayload.key(p, ChargedThrowPayload.PRESS);
-        p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(HammerRegistry.HAMMER.get()));
+        p.setItemInHand(InteractionHand.MAIN_HAND, HammerStage.RESONANT.createStack());
         ChargedThrowPayload.key(p, ChargedThrowPayload.RELEASE);
         h.assertTrue(!p.getMainHandItem().isEmpty(), "Switching Hammers must cancel the windup");
         p.setItemInHand(InteractionHand.MAIN_HAND, hammer);

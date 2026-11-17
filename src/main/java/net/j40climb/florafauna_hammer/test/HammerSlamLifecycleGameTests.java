@@ -2,6 +2,7 @@ package net.j40climb.florafauna_hammer.test;
 
 import net.j40climb.florafauna_hammer.common.item.abilities.GroundSlam;
 import net.j40climb.florafauna_hammer.common.item.hammer.HammerItem;
+import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -80,7 +81,7 @@ final class HammerSlamLifecycleGameTests {
             rider.setOnGround(false);
             var pig = h.spawn(EntityType.PIG, new BlockPos(8, 11, 8));
             h.assertTrue(rider.startRiding(pig, true, false) && rider.isPassenger(), "Failed to mount the rider");
-            h.assertTrue(!GroundSlam.activate(rider, HAND) && HammerItem.charge(rider.getMainHandItem()) == 64,
+            h.assertTrue(!GroundSlam.activate(rider, HAND) && HammerItem.charge(rider.getMainHandItem()) == HammerStage.TEMPEST.capacity(),
                     "Riding consumed Hammer charge");
             rider.stopRiding();
         } finally {

@@ -6,13 +6,35 @@ A standalone NeoForge mod for Minecraft 26.1 and Java 25. Find the Hammer in Too
 
 Run `./gradlew build runGameTestServer` from this checkout. The jar is `build/libs/florafauna_hammer-0.0.1+26.1.jar`. The same command works with `gradlew.bat` on Windows. Models and tool tags are included in source.
 
-Use `./gradlew test` for the world-free JUnit suite or `./gradlew "-PgameTestFilter=florafauna_hammer:hammer_tunnel_gaps" runGameTestServer` for one server scenario. With PowerShell 7, run `./scripts/test_hammer.ps1 -SourceWorld <closed-save-directory>` for two real client phases, including save and reload. The runner copies the source world and keeps its logs and screenshots under `.tmp/world-playtests/`. Add `-Scenario powers` to exercise chest interaction, a scan through a wall, marker expiry and a jump slam. Use `-Scenario radial` for mouse and keyboard wheel navigation, favorites, and settings. Use `-Scenario stair-outline` for the focused stair preview test.
+Use `./gradlew test` for the world-free JUnit suite or `./gradlew "-PgameTestFilter=florafauna_hammer:hammer_tunnel_gaps" runGameTestServer` for one server scenario. With PowerShell 7, run `./scripts/test_hammer.ps1 -SourceWorld <closed-save-directory>` for two real client phases, including save and reload. The runner copies the source world and keeps its logs and screenshots under `.tmp/world-playtests/`. Add `-Scenario powers` to exercise chest interaction, a scan through a wall, marker expiry and a jump slam. Use `-Scenario progression` to craft and upgrade a named Hammer in Survival, inspect its core at different charge levels, and verify its state after reopening the world. Use `-Scenario radial` for mouse and keyboard wheel navigation, favorites, and settings. Use `-Scenario stair-outline` for the focused stair preview test.
 
 For a sibling Gradle build add `includeBuild('../hammer')` to settings and depend on `net.j40climb.florafauna_hammer:florafauna_hammer:0.0.1+26.1`. Select the matching Minecraft branch when building. Server and client both need the same mod version.
 
 With FloraFauna, Hammer and Frenchies checked out side by side on matching versions, launch all three from the FloraFauna Stonecutter checkout with `.\gradlew.bat -PdevMods=all :26.1-neoforge:runClient`.
 
 Run `/florafauna ability` with a subcommand (`lightning`, `teleport`, `throw`, `mining`, `config`, `all` or `clear`) to edit the held item in creative mode or with game master permissions.
+
+## Survival progression
+
+Craft one Hammer and fit its two cores in order. In the Smithing Table, leave the template slot empty, put the Hammer in the middle and the core on the right. The upgrade carries forward the Hammer’s name, tool settings, favorites and enchantments. All three stages are available directly in Creative under Tools & Utilities.
+
+| Craft | Top row | Middle row | Bottom row |
+|-------|---------|------------|------------|
+| Forged Hammer | Iron ingot · Diamond · Iron ingot | Iron ingot · Stick · Iron ingot | Centered stick |
+| Resonance Core | Centered amethyst shard | Redstone dust · Diamond · Redstone dust | Centered Nether quartz |
+| Tempest Core | Centered blaze rod | Eye of Ender · Netherite ingot · Eye of Ender | Centered blaze rod |
+
+| Stage | Charge capacity | Newly available |
+|-------|-----------------|-----------------|
+| Forged | None | Single Block, 3×3, Walkable Tunnel, Bore, both staircases, Strip, Path, Till and normal throws. Includes mining previews, lava warnings, auto-torches and the Hammer settings. |
+| Resonant | 64 | 5×5, 7×7, Large Tunnel, Vein, Seismic Scan and charged ore throws. The first core starts fully charged. |
+| Tempest | 96 | Lightning, Ground Slam, Surface Teleport and Instabreak. Existing charge carries over. |
+
+Hold **C** to inspect the stage and hover over a locked wedge to see which core it needs. Tap **C** to cycle available shapes or favorites. Double-tap **C** for Single Block at any stage.
+
+### Energy core
+
+The Forged head has a fixed iron insert. The Resonant core rotates between the striking faces, with a violet glow that fades as charge runs down. The Tempest core rotates faster and has two luminous poles. Charging a throw, scanning, slamming and calling lightning briefly change the light at the core. The rotating insert is part of the item model in both hands, the inventory and the world.
 
 ## Data Components
 
@@ -24,6 +46,7 @@ Run `/florafauna ability` with a subcommand (`lightning`, `teleport`, `throw`, `
 | `TELEPORT_SURFACE_ABILITY` | Teleport to surface |
 | `THROWABLE_ABILITY` | Throw item as projectile |
 | `HAMMER_ACTION` | Selected right-click action |
+| `HAMMER_STAGE` | Forged, Resonant or Tempest |
 | `HAMMER_CHARGE` | Shared charge for ore strikes, Seismic Scan and Ground Slam |
 | `RIGHT_CLICK_ACTION` | Fallback ability for Auto |
 | `MULTI_TOOL_ABILITY` | Enables axe/shovel/hoe actions (strip, path, till) |
@@ -78,7 +101,7 @@ Each Hammer remembers its settings.
 
 While holding **C**, click a mining shape on the left and a grounded ability on the right, in either order. Each click sets that wheel immediately. Hover highlights a wedge. Release **C** to close the wheels and keep your choices. You can change just one wheel or close both without changing either. The right wheel’s center switches to **Settings** and back. Use **Tab** to reach either wheel, arrow keys to move around it, and **Enter** to select. Press **Esc** to close.
 
-The left wheel gives direct access to all ten mining shapes. Right-click its wedge or press **F** on it to toggle its favorite star. A new Hammer has no favorites. Removing its last star restores the full cycle. Selecting an unstarred shape leaves the stars alone. The next tap advances to the next starred shape in the usual order, wrapping as needed.
+The left wheel shows all ten mining shapes and enables the ones available at the current stage. Right-click its wedge or press **F** on it to toggle its favorite star. A new Hammer has no favorites. Removing its last star restores the full cycle. Selecting an unstarred shape leaves the stars alone. The next tap advances to the next starred shape in the usual order, wrapping as needed.
 
 In **Abilities**, select Auto, Strip, Path, Till, Throw, Lightning, Surface Teleport or Seismic Scan. Auto tries enabled block transformations first and then the configured fallback, which is Throw on a new Hammer. Strip, Path and Till leave the usual block interaction available when the targeted block cannot be transformed. In **Settings**, change enchantment, mining speed, vein matching or auto torches. Each Hammer carries its own selections.
 
@@ -125,7 +148,7 @@ Enable **Auto torches** in the held Hammer’s **Settings** wheel (hold **C**). 
 
 Aim at an exposed ore block and hold the throw key until the ready message appears (20 server ticks), then release. On impact the Hammer mines connected ore using its own Fortune or Silk Touch, vein matching and block limit, then returns. Stone or a denied center hit spends no charge. Other ore types touching the vein stay in place. Each ore block actually removed costs one charge. Ordinary swings and quick throws are free.
 
-A full Hammer stores 64 charge and recovers one charge per second while held in either hand. The inventory bar and tooltip show the remaining charge.
+Powered Hammers recover one charge per second while held in either hand, up to 64 for Resonant or 96 for Tempest. The inventory bar and tooltip show the remaining charge.
 
 ## Right-Click Action
 

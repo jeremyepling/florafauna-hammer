@@ -20,6 +20,7 @@ public final class HammerGameTests {
         var env = event.registerEnvironment(Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "default"),
                 new TestEnvironmentDefinition.AllOf());
         registerMiningModeTests(event, env);
+        HammerProgressionGameTests.register(event, env);
         HammerAbilityGameTests.register(event, env);
         HammerPowerGameTests.register(event, env);
         HammerSlamLifecycleGameTests.register(event, env);

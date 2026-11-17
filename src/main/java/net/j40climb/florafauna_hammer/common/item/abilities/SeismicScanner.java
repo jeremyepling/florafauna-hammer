@@ -1,7 +1,9 @@
 package net.j40climb.florafauna_hammer.common.item.abilities;
 
 import net.j40climb.florafauna_hammer.HammerMod;
+import net.j40climb.florafauna_hammer.common.item.abilities.data.HammerAction;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.SeismicScanPayload;
+import net.j40climb.florafauna_hammer.common.item.abilities.networking.HammerCorePayload;
 import net.j40climb.florafauna_hammer.common.item.hammer.HammerItem;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.core.BlockPos;
@@ -44,7 +46,7 @@ public final class SeismicScanner {
 
     public static boolean activate(ServerPlayer player, InteractionHand hand) {
         var stack = player.getItemInHand(hand);
-        if (!stack.is(HammerRegistry.HAMMER.get()) || !player.isAlive() || player.isSpectator() || !player.onGround()) return false;
+        if (!HammerAction.SCAN.availableOn(stack) || !player.isAlive() || player.isSpectator() || !player.onGround()) return false;
         long now = player.level().getServer().overworld().getGameTime();
         UUID id = player.getUUID();
         if (pending.contains(id) || cooldowns.getOrDefault(id, 0L) > now) {
@@ -62,6 +64,7 @@ public final class SeismicScanner {
         var origin = player.blockPosition().immutable();
         var level = player.level();
         queue.addLast(new Scan(id, level, origin, new OreDepositSearch(origin, RADIUS, MAX_DEPOSITS)));
+        HammerCorePayload.send(player, hand, HammerCorePayload.Cue.SCAN);
         PacketDistributor.sendToPlayer(player, new SeismicScanPayload(level.dimension().identifier(), origin, true, List.of()));
         return true;
     }

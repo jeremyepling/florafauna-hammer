@@ -2,9 +2,10 @@ package net.j40climb.florafauna_hammer.common.item.abilities;
 
 import net.j40climb.florafauna_hammer.HammerMod;
 import net.j40climb.florafauna_hammer.common.item.hammer.HammerItem;
+import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
+import net.j40climb.florafauna_hammer.common.item.abilities.networking.HammerCorePayload;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.core.particles.BlockParticleOption;
-import net.minecraft.core.particles.ColorParticleOption;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.particles.TrailParticleOption;
@@ -43,6 +44,7 @@ public final class GroundSlam {
     public record Pending(ItemStack hammer, InteractionHand hand, ResourceKey<Level> dimension, long start) {
         boolean valid(ServerPlayer player) {
             return hammer == player.getItemInHand(hand) && !hammer.isEmpty() && dimension == player.level().dimension()
+                    && HammerStage.of(hammer) == HammerStage.TEMPEST
                     && player.level().getGameTime() - start <= TIMEOUT_TICKS && canDescend(player);
         }
     }
@@ -51,7 +53,7 @@ public final class GroundSlam {
 
     public static boolean activate(ServerPlayer player, InteractionHand hand) {
         ItemStack hammer = player.getItemInHand(hand);
-        if (!hammer.is(HammerRegistry.HAMMER) || player.onGround()) return false;
+        if (!hammer.is(HammerRegistry.HAMMER) || HammerStage.of(hammer) != HammerStage.TEMPEST || player.onGround()) return false;
         if (!canDescend(player) || touchesGround(player)) {
             player.sendOverlayMessage(Component.translatable("ability.florafauna.slam.invalid"));
             return false;
@@ -74,8 +76,9 @@ public final class GroundSlam {
         player.setDeltaMovement(velocity.x * 0.35, Math.min(velocity.y, -DOWNWARD_SPEED), velocity.z * 0.35);
         player.hurtMarked = true; // Sync the server impulse to the controlling client.
         player.swing(hand, true);
+        HammerCorePayload.send(player, hand, HammerCorePayload.Cue.DESCENT);
         level.sendParticles(new DustParticleOptions(VIOLET, 1.2F), player.getX(), player.getY() + 0.8, player.getZ(),
-                14, 0.3, 0.45, 0.3, 0);
+                5, 0.3, 0.45, 0.3, 0);
         level.playSound(null, player.blockPosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.PLAYERS, 1.1F, 0.65F);
         return true;
     }
@@ -110,8 +113,10 @@ public final class GroundSlam {
         if (pending == null) return;
         if (!pending.valid(player)) {
             player.removeData(HammerRegistry.PENDING_SLAM);
+            HammerCorePayload.send(player, pending.hand(), HammerCorePayload.Cue.STOP_SLAM);
         } else if (player.onGround() && touchesGround(player)) {
             player.removeData(HammerRegistry.PENDING_SLAM);
+            HammerCorePayload.send(player, pending.hand(), HammerCorePayload.Cue.IMPACT);
             impact(player);
         }
     }
@@ -136,15 +141,13 @@ public final class GroundSlam {
         }
         Vec3 center = player.position().add(0, 0.13, 0);
         level.playSound(null, player.blockPosition(), SoundEvents.MACE_SMASH_GROUND_HEAVY, SoundSource.PLAYERS, 1.4F, 0.85F);
-        level.sendParticles(ColorParticleOption.create(ParticleTypes.FLASH, 0xFF000000 | VIOLET),
-                center.x, center.y, center.z, 1, 0, 0, 0, 0);
         var ground = level.getBlockState(player.getOnPos());
         if (!ground.isAir()) {
             level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, ground), center.x, center.y, center.z,
-                    30, 0.65, 0.12, 0.65, 0.16);
+                    16, 0.65, 0.12, 0.65, 0.16);
         }
         // Vanilla trail particles interpolate toward their targets on each observing client.
-        int points = 36;
+        int points = 24;
         for (int i = 0; i < points; i++) {
             double angle = i * 2 * Math.PI / points;
             Vec3 end = center.add(Math.cos(angle) * RADIUS, 0, Math.sin(angle) * RADIUS);

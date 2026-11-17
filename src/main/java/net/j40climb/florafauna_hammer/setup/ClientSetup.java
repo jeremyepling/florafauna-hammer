@@ -1,6 +1,8 @@
 package net.j40climb.florafauna_hammer.setup;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import net.j40climb.florafauna_hammer.client.HammerCoreModel;
+import net.neoforged.neoforge.client.event.RegisterItemModelsEvent;
 import net.j40climb.florafauna_hammer.HammerMod;
 import net.j40climb.florafauna_hammer.common.item.projectile.ThrownItemRenderer;
 import net.minecraft.client.KeyMapping;
@@ -50,6 +52,7 @@ public final class ClientSetup {
     ));
 
     public static void init(IEventBus bus) {
+        bus.addListener((RegisterItemModelsEvent event) -> event.register(HammerCoreModel.ID, HammerCoreModel.Unbaked.CODEC));
         bus.addListener(ClientSetup::registerKeys);
         bus.addListener(ClientSetup::registerRenderers);
     }

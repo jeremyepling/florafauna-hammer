@@ -13,6 +13,7 @@ import net.j40climb.florafauna_hammer.common.item.abilities.data.ToolConfig;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.ThrowItemPayload;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.UpdateToolConfigPayload;
 import net.j40climb.florafauna_hammer.common.item.projectile.ThrownItemEntity;
+import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -130,7 +131,7 @@ final class HammerAbilityGameTests {
 
     private static void checkConfigurations(GameTestHelper helper) {
         ServerPlayer player = player(helper);
-        ItemStack hammer = new ItemStack(HammerRegistry.HAMMER.get());
+        ItemStack hammer = HammerStage.TEMPEST.createStack();
         player.setItemInHand(InteractionHand.MAIN_HAND, hammer);
         var fortune = helper.getLevel().registryAccess().holderOrThrow(Enchantments.FORTUNE);
         var silk = helper.getLevel().registryAccess().holderOrThrow(Enchantments.SILK_TOUCH);

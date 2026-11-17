@@ -3,6 +3,7 @@ package net.j40climb.florafauna_hammer.common.item.abilities.networking;
 import io.netty.buffer.ByteBuf;
 import net.j40climb.florafauna_hammer.HammerMod;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.ToolConfig;
+import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.core.Holder;
 import net.minecraft.network.codec.StreamCodec;
@@ -42,7 +43,7 @@ public record UpdateToolConfigPayload(int slot, ToolConfig config) implements Cu
 
     public static void applyToHeldItem(Player player, ToolConfig config) {
         ItemStack stack = player.getMainHandItem();
-        if (!stack.has(HammerRegistry.TOOL_CONFIG)) return;
+        if (!stack.has(HammerRegistry.TOOL_CONFIG) || !HammerStage.of(stack).allows(config.miningSpeed())) return;
         stack.set(HammerRegistry.TOOL_CONFIG, config);
         var registries = player.level().registryAccess();
         Holder<Enchantment> fortune = registries.holderOrThrow(Enchantments.FORTUNE);

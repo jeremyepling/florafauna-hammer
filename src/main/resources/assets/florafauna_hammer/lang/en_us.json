@@ -78,5 +78,16 @@
   "gui.florafauna.hammer_menu.shape.stairs_down": "Stairs Down",
   "gui.florafauna.hammer_menu.shape.walkable_tunnel": "Walkable",
   "gui.florafauna.hammer_menu.shape.large_tunnel": "Large",
-  "gui.florafauna.hammer_menu.shape.bore": "Bore"
+  "gui.florafauna.hammer_menu.shape.bore": "Bore",
+  "item.florafauna.hammer.forged": "Forged Hammer",
+  "item.florafauna.hammer.resonant": "Resonant Hammer",
+  "item.florafauna.hammer.tempest": "Tempest Hammer",
+  "item.florafauna.resonance_core": "Resonance Core",
+  "item.florafauna.tempest_core": "Tempest Core",
+  "gui.florafauna.hammer_menu.requires": "Requires %s",
+  "gui.florafauna.hammer_menu.slam": "Airborne: Ground Slam",
+  "gui.florafauna.hammer_menu.slam_locked": "Ground Slam: Tempest Core",
+  "gui.florafauna.hammer_menu.charged_throw": "Hold throw: ore strike",
+  "gui.florafauna.hammer_menu.throw_locked": "Charged throw: Resonance Core",
+  "gui.florafauna.hammer_menu.speed_locked": "Instabreak: Tempest Core"
 }

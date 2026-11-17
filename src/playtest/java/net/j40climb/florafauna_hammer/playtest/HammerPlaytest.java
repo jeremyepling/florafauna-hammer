@@ -8,6 +8,7 @@ import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningSpeed;
 import net.j40climb.florafauna_hammer.common.item.abilities.menu.HammerMenuScreen;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.UpdateToolConfigPayload;
 import net.j40climb.florafauna_hammer.setup.ClientSetup;
+import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.KeyMapping;
@@ -227,7 +228,7 @@ public final class HammerPlaytest {
         player.setGameMode(GameType.SURVIVAL);
         player.removeAllEffects();
         player.getInventory().clearContent();
-        player.getInventory().setItem(0, new ItemStack(HammerRegistry.HAMMER.get()));
+        player.getInventory().setItem(0, HammerStage.TEMPEST.createStack());
         player.getInventory().setSelectedSlot(0);
         player.teleportTo(level, 0.5, 201, 0.5, Set.of(), 0f, 0f, true);
         player.inventoryMenu.broadcastChanges();

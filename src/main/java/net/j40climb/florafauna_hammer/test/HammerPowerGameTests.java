@@ -9,6 +9,7 @@ import net.j40climb.florafauna_hammer.common.item.abilities.data.HammerAction;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningShape;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.SeismicScanPayload;
 import net.j40climb.florafauna_hammer.common.item.hammer.HammerItem;
+import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -67,6 +68,7 @@ final class HammerPowerGameTests {
         var origin = h.absolutePos(FLOOR.above());
         var player = scanner(h, origin).player;
         try {
+            player.setItemInHand(HAND, HammerStage.TEMPEST.createStack());
             var target = origin.east(2);
             player.getMainHandItem().set(HammerRegistry.HAMMER_ACTION, HammerAction.LIGHTNING);
             var hit = new BlockHitResult(target.getCenter(), Direction.UP, target, false);
@@ -100,9 +102,9 @@ final class HammerPowerGameTests {
         var hit = new BlockHitResult(floor.getCenter(), Direction.UP, floor, false);
         var click = new PlayerInteractEvent.RightClickBlock(player, HAND, floor, hit);
         RightClickActionHandler.onRightClickBlock(click);
-        h.assertTrue(click.isCanceled() && player.getMainHandItem() == hammer && HammerItem.charge(hammer) == 52
+        h.assertTrue(click.isCanceled() && player.getMainHandItem() == hammer && HammerItem.charge(hammer) == 84
                 && player.getDeltaMovement().y < -1 && player.hasData(HammerRegistry.PENDING_SLAM), "Airborne block click failed to slam instead of throwing");
-        h.assertTrue(clickAir(player) && HammerItem.charge(hammer) == 52, "Repeated slam spent charge twice");
+        h.assertTrue(clickAir(player) && HammerItem.charge(hammer) == 84, "Repeated slam spent charge twice");
         player.setPos(Vec3.atBottomCenterOf(floor.above()));
         player.setOnGround(true);
         GroundSlam.tick(new PlayerTickEvent.Post(player));
@@ -118,7 +120,7 @@ final class HammerPowerGameTests {
         h.assertTrue(after == near.getHealth() && !player.hasData(HammerRegistry.PENDING_SLAM), "Impact fired twice");
         player.setPos(Vec3.atBottomCenterOf(floor.above(3)));
         player.setOnGround(false);
-        h.assertTrue(clickAir(player) && HammerItem.charge(hammer) == 52 && !player.hasData(HammerRegistry.PENDING_SLAM),
+        h.assertTrue(clickAir(player) && HammerItem.charge(hammer) == 84 && !player.hasData(HammerRegistry.PENDING_SLAM),
                 "Cooldown allowed a second activation or throw");
         h.succeed();
     }
@@ -165,7 +167,7 @@ final class HammerPowerGameTests {
         });
         player.setPos(Vec3.atBottomCenterOf(position));
         player.setOnGround(true);
-        player.setItemInHand(HAND, new ItemStack(HammerRegistry.HAMMER.get()));
+        player.setItemInHand(HAND, HammerStage.RESONANT.createStack());
         player.getMainHandItem().set(HammerRegistry.HAMMER_ACTION, HammerAction.SCAN);
         return new Scanner(player, received);
     }

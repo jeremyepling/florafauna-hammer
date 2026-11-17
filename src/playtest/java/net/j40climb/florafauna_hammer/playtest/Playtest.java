@@ -58,6 +58,7 @@ public final class Playtest {
             return true;
         });
         if ("stair-outline".equals(scenario)) HammerStairOutlinePlaytest.steps(this);
+        else if ("progression".equals(scenario)) HammerProgressionPlaytest.steps(this, phase);
         else if ("radial".equals(scenario)) HammerRadialPlaytest.steps(this);
         else if ("powers".equals(scenario)) HammerPowerPlaytest.steps(this);
         else HammerPlaytest.steps(this, phase);

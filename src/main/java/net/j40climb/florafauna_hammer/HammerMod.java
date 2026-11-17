@@ -5,6 +5,7 @@ import net.j40climb.florafauna_hammer.common.item.abilities.networking.*;
 import net.j40climb.florafauna_hammer.setup.ClientSetup;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.j40climb.florafauna_hammer.test.HammerGameTests;
+import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
@@ -33,11 +34,17 @@ public final class HammerMod {
     }
 
     private static void creativeTab(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) event.accept(HammerRegistry.HAMMER);
+        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
+            for (HammerStage stage : HammerStage.values()) event.accept(stage.createStack());
+        } else if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) {
+            event.accept(HammerRegistry.RESONANCE_CORE);
+            event.accept(HammerRegistry.TEMPEST_CORE);
+        }
     }
 
     private static void networking(RegisterPayloadHandlersEvent event) {
         var registrar = event.registrar("2");
+        registrar.playToClient(HammerCorePayload.TYPE, HammerCorePayload.STREAM_CODEC);
         registrar.playToClient(SeismicScanPayload.TYPE, SeismicScanPayload.STREAM_CODEC);
         registrar.playToServer(SpawnLightningPayload.TYPE, SpawnLightningPayload.STREAM_CODEC, SpawnLightningPayload::onServerReceived);
         registrar.playToServer(TeleportToSurfacePayload.TYPE, TeleportToSurfacePayload.STREAM_CODEC, TeleportToSurfacePayload::onServerReceived);

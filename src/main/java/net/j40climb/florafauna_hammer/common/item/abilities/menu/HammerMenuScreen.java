@@ -1,5 +1,6 @@
 package net.j40climb.florafauna_hammer.common.item.abilities.menu;
 
+import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
@@ -41,9 +42,11 @@ public final class HammerMenuScreen extends Screen {
 
     private final int slot;
     private final ItemStack tool;
+    private final HammerStage stage;
     private final List<RadialButton> leftWheel = new ArrayList<>();
     private final List<RadialButton> rightWheel = new ArrayList<>();
     private final Map<RadialButton, Component> details = new HashMap<>();
+    private final Map<RadialButton, Component> hints = new HashMap<>();
     private final EnumMap<MiningShape, RadialButton> shapeButtons = new EnumMap<>(MiningShape.class);
     private final EnumMap<HammerAction, RadialButton> actionButtons = new EnumMap<>(HammerAction.class);
     private MiningModeData mining;
@@ -60,15 +63,17 @@ public final class HammerMenuScreen extends Screen {
         super(Component.translatable("item.florafauna.hammer"));
         this.slot = slot;
         tool = stack.copy();
-        mining = stack.get(HammerRegistry.MULTI_BLOCK_MINING);
+        stage = HammerStage.of(stack);
+        mining = stack.has(HammerRegistry.MULTI_BLOCK_MINING) ? MiningModeData.effective(stack) : null;
         action = stack.get(HammerRegistry.HAMMER_ACTION);
         config = stack.get(HammerRegistry.TOOL_CONFIG);
+        if (config != null) config = config.withMiningSpeed(config.effectiveSpeed(stage));
         settingsOpen = action == null && config != null;
     }
 
     @Override
     protected void init() {
-        outer = Math.min(138, Math.min((width - 24) / 4, (height - 72) / 2));
+        outer = Math.min(138, Math.min((width - 24) / 4, (height - 90) / 2));
         inner = outer / 3;
         leftX = width / 2 - outer - 5;
         rightX = width / 2 + outer + 5;
@@ -78,24 +83,34 @@ public final class HammerMenuScreen extends Screen {
         shapeButtons.clear();
         actionButtons.clear();
         details.clear();
+        hints.clear();
 
         for (var shape : SHAPES) {
             var slice = wedge(leftWheel, SHAPES.size(), shortShape(shape), null, shapeIcon(shape),
                     ignored -> chooseShape(shape), () -> favorite(shape));
-            slice.active = mining != null;
+            slice.active = mining != null && stage.allows(shape);
             slice.setSelected(mining != null && shape == mining.shape());
             slice.setFavorite(mining != null && mining.isFavorite(shape));
             shapeButtons.put(shape, slice);
             details.put(slice, Component.translatable("mining_shape.florafauna." + shape.getSerializedName()));
+            if (!stage.allows(shape)) hints.put(slice, requires(HammerStage.required(shape)));
         }
         addRenderableWidget(new HubButton(leftX, CommonComponents.GUI_DONE, tool, ignored -> onClose()));
         if (settingsOpen) {
             setting("enchantment", Items.ENCHANTED_BOOK, () -> config.fortune() ? "enchantment.fortune" : "enchantment.silk_touch",
                     ToolConfig::withToggledEnchantment);
-            setting("mining_speed", Items.GOLDEN_PICKAXE, () -> "speed." + config.miningSpeed().getSerializedName(),
-                    ToolConfig::withNextMiningSpeed);
-            setting("vein_matching", Items.RAW_IRON, () -> config.exactVein() ? "vein.exact" : "vein.same_ore",
+            var speed = setting("mining_speed", Items.GOLDEN_PICKAXE, () -> "speed." + config.miningSpeed().getSerializedName(),
+                    current -> {
+                        var next = current.withNextMiningSpeed();
+                        return stage.allows(next.miningSpeed()) ? next : next.withNextMiningSpeed();
+                    });
+            if (stage != HammerStage.TEMPEST) details.put(speed, label("speed_locked"));
+            var vein = setting("vein_matching", Items.RAW_IRON, () -> config.exactVein() ? "vein.exact" : "vein.same_ore",
                     ToolConfig::withToggledVeinMatching);
+            if (stage == HammerStage.FORGED) {
+                vein.active = false;
+                details.put(vein, requires(HammerStage.RESONANT));
+            }
             setting("tunnel_lighting", Items.TORCH, () -> config.tunnelLighting() ? "lighting.on" : "lighting.off",
                     ToolConfig::withToggledTunnelLighting);
         } else {
@@ -106,6 +121,10 @@ public final class HammerMenuScreen extends Screen {
                 slice.setSelected(choice == action);
                 actionButtons.put(choice, slice);
                 details.put(slice, choice.label());
+                if (!stage.allows(choice)) hints.put(slice, requires(HammerStage.required(choice)));
+                if (choice == HammerAction.THROW && tool.is(HammerRegistry.HAMMER)) {
+                    hints.put(slice, label(stage == HammerStage.FORGED ? "throw_locked" : "charged_throw"));
+                }
             }
         }
         rightHub = addRenderableWidget(new HubButton(rightX, settingsOpen ? CommonComponents.GUI_BACK : label("settings"),
@@ -145,8 +164,8 @@ public final class HammerMenuScreen extends Screen {
         ClientPacketDistributor.sendToServer(new SelectHammerActionPayload(slot, choice));
     }
 
-    private void setting(String name, Item icon, Supplier<String> value, UnaryOperator<ToolConfig> change) {
-        wedge(rightWheel, 4, Component.translatable(CONFIG + value.get()), Component.translatable(CONFIG + name), icon, button -> {
+    private RadialButton setting(String name, Item icon, Supplier<String> value, UnaryOperator<ToolConfig> change) {
+        return wedge(rightWheel, 4, Component.translatable(CONFIG + value.get()), Component.translatable(CONFIG + name), icon, button -> {
             config = change.apply(config);
             button.setMessage(Component.translatable(CONFIG + value.get()));
             ClientPacketDistributor.sendToServer(new UpdateToolConfigPayload(slot, config));
@@ -192,6 +211,11 @@ public final class HammerMenuScreen extends Screen {
         };
     }
 
+    private static Component requires(HammerStage required) {
+        var core = required == HammerStage.TEMPEST ? HammerRegistry.TEMPEST_CORE : HammerRegistry.RESONANCE_CORE;
+        return Component.translatable(MENU + "requires", core.toStack().getHoverName());
+    }
+
     private static Component label(String key) {
         return Component.translatable(MENU + key);
     }
@@ -201,7 +225,7 @@ public final class HammerMenuScreen extends Screen {
             return getFocused() instanceof RadialButton focused && wheel.contains(focused) ? focused : null;
         }
         for (var button : wheel) {
-            if (button.isMouseOver(x, y)) return button;
+            if (button.contains(x, y)) return button;
         }
         return null;
     }
@@ -211,6 +235,7 @@ public final class HammerMenuScreen extends Screen {
         super.extractRenderState(g, mouseX, mouseY, partialTick);
         int headingY = cy - outer - 25;
         int detailY = cy + outer + 7;
+        if (tool.is(HammerRegistry.HAMMER)) g.centeredText(font, stage.label(), width / 2, headingY - 10, 0xfff4e9ff);
         g.centeredText(font, label("mining"), leftX, headingY, 0xffffe1aa);
         g.centeredText(font, label(settingsOpen ? "settings" : "abilities"), rightX, headingY, 0xffffe1aa);
         if (mining != null) {
@@ -219,17 +244,17 @@ public final class HammerMenuScreen extends Screen {
             if (pointed != null) {
                 g.centeredText(font, details.get(pointed), leftX, detailY, 0xfffbf0ff);
             }
-            g.centeredText(font, label("favorites_hint"), leftX, detailY + 12, 0xffe1cbe9);
+            g.centeredText(font, hints.getOrDefault(pointed, label("favorites_hint")), leftX, detailY + 12, 0xffe1cbe9);
         }
-        g.centeredText(font, Component.translatable(MENU + "release_hint",
-                ClientSetup.CYCLE_MINING_MODE_KEY.get().getTranslatedKeyMessage()), rightX, detailY + 12, 0xffe1cbe9);
-        if (!settingsOpen && action != null) {
-            g.centeredText(font, action.label(), rightX, headingY + 11, 0xffffd17e);
-            var pointed = pointedWedge(rightWheel, mouseX, mouseY);
-            if (pointed != null) {
-                g.centeredText(font, details.get(pointed), rightX, detailY, 0xfffbf0ff);
-            }
+        if (!settingsOpen && action != null) g.centeredText(font, action.label(), rightX, headingY + 11, 0xffffd17e);
+        var pointed = pointedWedge(rightWheel, mouseX, mouseY);
+        var release = Component.translatable(MENU + "release_hint", ClientSetup.CYCLE_MINING_MODE_KEY.get().getTranslatedKeyMessage());
+        g.centeredText(font, hints.getOrDefault(pointed, release), rightX, detailY + 12, 0xffe1cbe9);
+        Component detail = details.get(pointed);
+        if (detail == null && !settingsOpen && tool.is(HammerRegistry.HAMMER)) {
+            detail = label(stage == HammerStage.TEMPEST ? "slam" : "slam_locked");
         }
+        if (detail != null) g.centeredText(font, detail, rightX, detailY, 0xfffbf0ff);
     }
 
     private final class HubButton extends Button {
@@ -335,7 +360,7 @@ public final class HammerMenuScreen extends Screen {
     @Override
     public void tick() {
         if (minecraft.player == null || minecraft.player.getInventory().getSelectedSlot() != slot
-                || !minecraft.player.getMainHandItem().is(tool.getItem())) onClose();
+                || !minecraft.player.getMainHandItem().is(tool.getItem()) || HammerStage.of(minecraft.player.getMainHandItem()) != stage) onClose();
     }
 
     @Override

@@ -3,7 +3,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)] [string]$SourceWorld,
-    [ValidateSet('hammer','stair-outline','powers','radial')][string]$Scenario = 'hammer',
+    [ValidateSet('hammer','stair-outline','powers','radial','progression')][string]$Scenario = 'hammer',
     [switch]$Offline
 )
 $ErrorActionPreference = 'Stop'
@@ -50,7 +50,7 @@ try {
         $gameOptions | Set-Content -LiteralPath (Join-Path $gameDir 'options.txt')
     } finally { if ($lock) { $lock.Dispose() } }
 
-    $phases = if ($Scenario -eq 'hammer') { 1, 2 } else { 1 }
+    $phases = if ($Scenario -in 'hammer', 'progression') { 1, 2 } else { 1 }
     foreach ($phase in $phases) {
         Write-Host "Launching Hammer phase $phase ..."
         $log = Join-Path $gameDir "phase-$phase.log"

@@ -2,7 +2,7 @@ package net.j40climb.florafauna_hammer.common.item.abilities.networking;
 
 import io.netty.buffer.ByteBuf;
 import net.j40climb.florafauna_hammer.HammerMod;
-import net.j40climb.florafauna_hammer.setup.HammerRegistry;
+import net.j40climb.florafauna_hammer.common.item.abilities.data.HammerAction;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
@@ -20,7 +20,7 @@ public enum TeleportToSurfacePayload implements CustomPacketPayload {
 
     public static void onServerReceived(final TeleportToSurfacePayload data, final IPayloadContext context) {
         Player player = context.player();
-        if (player.getMainHandItem().has(HammerRegistry.TELEPORT_SURFACE_ABILITY)) {
+        if (HammerAction.TELEPORT.availableOn(player.getMainHandItem())) {
             teleportToSurface(player);
         }
     }

@@ -2,6 +2,7 @@ package net.j40climb.florafauna_hammer.common.item.abilities.data;
 
 import com.mojang.serialization.Codec;
 import io.netty.buffer.ByteBuf;
+import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
@@ -31,6 +32,7 @@ public enum HammerAction implements StringRepresentable {
     }
 
     public boolean availableOn(ItemStack tool) {
+        if (!HammerStage.of(tool).allows(this)) return false;
         return switch (this) {
             case AUTO -> true;
             case STRIP, PATH, TILL -> !toolActions(tool.getOrDefault(HammerRegistry.MULTI_TOOL_ABILITY, MultiToolAbilityData.NONE))

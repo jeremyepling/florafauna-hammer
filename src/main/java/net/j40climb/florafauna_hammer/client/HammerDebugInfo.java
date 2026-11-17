@@ -1,6 +1,9 @@
 package net.j40climb.florafauna_hammer.client;
 
 import net.j40climb.florafauna_hammer.HammerMod;
+import net.j40climb.florafauna_hammer.common.item.abilities.data.HammerAction;
+import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningModeData;
+import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
@@ -22,15 +25,19 @@ public final class HammerDebugInfo {
     }
 
     private static void append(ItemStack stack, List<String> lines) {
-        var mining = stack.get(HammerRegistry.MULTI_BLOCK_MINING);
-        if (mining != null) lines.add("Mining: " + mining.shape().name() + ", radius=" + mining.radius());
+        var stage = HammerStage.of(stack);
+        if (stack.is(HammerRegistry.HAMMER)) lines.add(stage.label().getString());
+        if (stack.has(HammerRegistry.MULTI_BLOCK_MINING)) {
+            var mining = MiningModeData.effective(stack);
+            lines.add("Mining: " + mining.shape().name() + ", radius=" + mining.radius());
+        }
         var config = stack.get(HammerRegistry.TOOL_CONFIG);
         if (config != null) {
             var enchant = config.fortune() ? "Fortune" : "SilkTouch";
-            lines.add("Tool Config: " + enchant + ", " + config.miningSpeed().name());
+            lines.add("Tool Config: " + enchant + ", " + config.effectiveSpeed(stage).name());
         }
-        if (stack.has(HammerRegistry.LIGHTNING_ABILITY)) lines.add("Lightning: Yes");
-        if (stack.has(HammerRegistry.TELEPORT_SURFACE_ABILITY)) lines.add("Teleport: Yes");
+        if (HammerAction.LIGHTNING.availableOn(stack)) lines.add("Lightning: Yes");
+        if (HammerAction.TELEPORT.availableOn(stack)) lines.add("Teleport: Yes");
         var throwable = stack.get(HammerRegistry.THROWABLE_ABILITY);
         if (throwable != null) {
             lines.add("Throw: dmg=" + throwable.damage() + ", range=" + throwable.maxRange());

@@ -9,6 +9,7 @@ import net.j40climb.florafauna_hammer.common.item.abilities.data.ToolConfig;
 import net.j40climb.florafauna_hammer.common.item.abilities.multiblock.LavaExposure;
 import net.j40climb.florafauna_hammer.common.item.abilities.multiblock.MultiBlockPatterns;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.UpdateToolConfigPayload;
+import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -557,7 +558,7 @@ final class HammerMiningGameTests {
     static ServerPlayer player(GameTestHelper h, MiningShape mode) {
         var player = new FakePlayer(h.getLevel(), new GameProfile(UUID.randomUUID(), "mining-test"));
         player.setGameMode(GameType.CREATIVE);
-        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(HammerRegistry.HAMMER.get()));
+        player.setItemInHand(InteractionHand.MAIN_HAND, HammerStage.TEMPEST.createStack());
         configure(player, mode);
         return player;
     }

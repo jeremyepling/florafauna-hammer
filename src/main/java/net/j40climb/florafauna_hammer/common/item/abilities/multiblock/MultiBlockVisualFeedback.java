@@ -43,7 +43,7 @@ public final class MultiBlockVisualFeedback {
                     clear(player);
                     return;
                 }
-                var mode = event.getItemStack().get(HammerRegistry.MULTI_BLOCK_MINING);
+                var mode = MiningModeData.effective(event.getItemStack());
                 if (ticksMining == 0 || !mode.equals(crackMode)) {
                     draw(player, -1);
                     crackMode = mode;

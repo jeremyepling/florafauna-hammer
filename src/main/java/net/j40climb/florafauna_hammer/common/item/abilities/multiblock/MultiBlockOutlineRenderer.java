@@ -4,6 +4,7 @@ import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import net.j40climb.florafauna_hammer.HammerMod;
+import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningModeData;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -57,8 +58,9 @@ public class MultiBlockOutlineRenderer {
             if (mc.options.hideGui || mc.player == null || mc.screen != null
                     || !(mc.hitResult instanceof BlockHitResult hit) || !hit.getBlockPos().equals(previewTarget)
                     || Math.abs(mc.player.level().getGameTime() - previewTick) > 1 || previewCount == 0) return;
-            var mining = mc.player.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING);
-            if (mining == null) return;
+            var stack = mc.player.getMainHandItem();
+            if (!stack.has(HammerRegistry.MULTI_BLOCK_MINING)) return;
+            var mining = MiningModeData.effective(stack);
             var shape = Component.translatable("mining_shape.florafauna." + mining.shape().getSerializedName());
             var key = previewCount == 1 ? "hud.florafauna_hammer.mining_preview.single" : "hud.florafauna_hammer.mining_preview";
             var label = Component.translatable(key, shape, previewCount);

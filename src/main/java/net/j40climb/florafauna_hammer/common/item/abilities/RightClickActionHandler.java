@@ -102,7 +102,7 @@ public class RightClickActionHandler {
         switch (selected) {
             case SCAN -> {
                 // HammerItem.useOn runs after the block gets its normal interaction.
-                if (clickedPos != null || !stack.is(HammerRegistry.HAMMER)) return false;
+                if (clickedPos != null || !selected.availableOn(stack)) return false;
                 if (serverPlayer != null) SeismicScanner.activate(serverPlayer, hand);
                 return true;
             }
@@ -112,15 +112,15 @@ public class RightClickActionHandler {
                 return true;
             }
             case LIGHTNING -> {
-                if (!stack.has(HammerRegistry.LIGHTNING_ABILITY)) return false;
+                if (!selected.availableOn(stack)) return false;
                 if (serverPlayer != null) {
                     BlockPos target = clickedPos != null ? clickedPos : SpawnLightningPayload.targetFromView(player);
-                    if (player.level().hasChunkAt(target)) SpawnLightningPayload.spawnLightningBolt(player.level(), target);
+                    SpawnLightningPayload.spawnLightningBolt(serverPlayer, hand, target);
                 }
                 return true;
             }
             case TELEPORT -> {
-                if (!stack.has(HammerRegistry.TELEPORT_SURFACE_ABILITY)) return false;
+                if (!selected.availableOn(stack)) return false;
                 if (serverPlayer != null) TeleportToSurfacePayload.teleportToSurface(serverPlayer);
                 return true;
             }
@@ -171,11 +171,11 @@ public class RightClickActionHandler {
                 CycleMiningModePayload.cycleMiningMode(serverPlayer, stack);
             }
             case "lightning_ability" -> {
-                if (clickedPos == null || !stack.has(HammerRegistry.LIGHTNING_ABILITY)) return false;
-                SpawnLightningPayload.spawnLightningBolt(player.level(), clickedPos);
+                if (clickedPos == null || !HammerAction.LIGHTNING.availableOn(stack)) return false;
+                SpawnLightningPayload.spawnLightningBolt(serverPlayer, hand, clickedPos);
             }
             case "teleport_surface_ability" -> {
-                if (!stack.has(HammerRegistry.TELEPORT_SURFACE_ABILITY)) return false;
+                if (!HammerAction.TELEPORT.availableOn(stack)) return false;
                 TeleportToSurfacePayload.teleportToSurface(serverPlayer);
             }
             default -> {

@@ -65,10 +65,11 @@ public final class SeismicScanEffects {
         long now = world.getGameTime();
         long age = now - pulseStart;
         if (now - markerStart >= SeismicScanner.HIGHLIGHT_TICKS) markers = List.of();
-        if (age < 0 || age >= PULSE_TICKS) return;
-        double radius = (age + 1) * (double) SeismicScanner.RADIUS / PULSE_TICKS;
-        for (int i = 0; i < 24; i++) {
-            double angle = (i + 0.37 * age) * Math.TAU / 24;
+        // Let the core light first, then sweep the private search radius with a thinning ring.
+        if (age < 3 || age >= 3 + PULSE_TICKS || age % 2 == 0) return;
+        double radius = (age - 1) * (double) SeismicScanner.RADIUS / PULSE_TICKS;
+        for (int i = 0; i < 16; i++) {
+            double angle = (i + 0.37 * age) * Math.TAU / 16;
             double dx = Math.cos(angle), dz = Math.sin(angle);
             world.addParticle(i % 4 == 0 ? LILAC : VIOLET, origin.x + radius * dx, origin.y, origin.z + radius * dz,
                     dx * 0.15, 0.015, dz * 0.15);

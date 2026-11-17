@@ -10,7 +10,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-/** Transient hand animation. The observer never receives scan locations or mining targets. */
+/** One-shot sounds and particles. Keep the original cue ordinals for existing clients. */
 public record HammerCorePayload(int playerId, InteractionHand hand, Cue cue) implements CustomPacketPayload {
     public enum Cue { SCAN, DESCENT, IMPACT, LIGHTNING, WINDUP, READY, RELEASE, STOP_THROW, STOP_SLAM, MODE }
 

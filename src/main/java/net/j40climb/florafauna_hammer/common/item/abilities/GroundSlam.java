@@ -3,7 +3,6 @@ package net.j40climb.florafauna_hammer.common.item.abilities;
 import net.j40climb.florafauna_hammer.HammerMod;
 import net.j40climb.florafauna_hammer.common.item.hammer.HammerItem;
 import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
-import net.j40climb.florafauna_hammer.common.item.abilities.networking.HammerCorePayload;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.DustParticleOptions;
@@ -76,7 +75,6 @@ public final class GroundSlam {
         player.setDeltaMovement(velocity.x * 0.35, Math.min(velocity.y, -DOWNWARD_SPEED), velocity.z * 0.35);
         player.hurtMarked = true; // Sync the server impulse to the controlling client.
         player.swing(hand, true);
-        HammerCorePayload.send(player, hand, HammerCorePayload.Cue.DESCENT);
         level.sendParticles(new DustParticleOptions(VIOLET, 1.2F), player.getX(), player.getY() + 0.8, player.getZ(),
                 5, 0.3, 0.45, 0.3, 0);
         level.playSound(null, player.blockPosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.PLAYERS, 1.1F, 0.65F);
@@ -113,10 +111,8 @@ public final class GroundSlam {
         if (pending == null) return;
         if (!pending.valid(player)) {
             player.removeData(HammerRegistry.PENDING_SLAM);
-            HammerCorePayload.send(player, pending.hand(), HammerCorePayload.Cue.STOP_SLAM);
         } else if (player.onGround() && touchesGround(player)) {
             player.removeData(HammerRegistry.PENDING_SLAM);
-            HammerCorePayload.send(player, pending.hand(), HammerCorePayload.Cue.IMPACT);
             impact(player);
         }
     }

@@ -102,7 +102,7 @@ final class HammerProgressionPlaytest {
         t.screenshot(stem + "-first-idle");
         if (stage != HammerStage.FORGED) {
             waitTicks(t, 8);
-            t.screenshot(stem + "-first-rotated");
+            t.screenshot(stem + "-first-idle-later");
             for (int charge : new int[]{stage.capacity() / 2, 3, 0}) {
                 setCharge(t, charge);
                 t.screenshot(stem + "-first-charge-" + charge);

@@ -6,7 +6,7 @@ A standalone NeoForge mod for Minecraft 26.1 and Java 25. Find the Hammer in Too
 
 Run `./gradlew build runGameTestServer` from this checkout. The jar is `build/libs/florafauna_hammer-0.0.1+26.1.jar`. The same command works with `gradlew.bat` on Windows. Models and tool tags are included in source.
 
-Use `./gradlew test` for the world-free JUnit suite or `./gradlew "-PgameTestFilter=florafauna_hammer:hammer_tunnel_gaps" runGameTestServer` for one server scenario. With PowerShell 7, run `./scripts/test_hammer.ps1 -SourceWorld <closed-save-directory>` for two real client phases, including save and reload. The runner copies the source world and keeps its logs and screenshots under `.tmp/world-playtests/`. Add `-Scenario powers` to exercise chest interaction, a scan through a wall, marker expiry and a jump slam. Use `-Scenario progression` to craft and upgrade a named Hammer in Survival, inspect its core at different charge levels, and verify its state after reopening the world. Use `-Scenario radial` for mouse and keyboard wheel navigation, favorites, and settings. Use `-Scenario stair-outline` for the focused stair preview test.
+Use `./gradlew test` for the world-free JUnit suite or `./gradlew "-PgameTestFilter=florafauna_hammer:hammer_tunnel_gaps" runGameTestServer` for one server scenario. With PowerShell 7, run `./scripts/test_hammer.ps1 -SourceWorld <closed-save-directory>` for two real client phases, including save and reload. The runner copies the source world and keeps its logs and screenshots under `.tmp/world-playtests/`. Add `-Scenario powers` to exercise chest interaction, a scan through a wall, marker expiry and a jump slam. Use `-Scenario progression` to craft and upgrade a named Hammer in Survival, check its charge bar and appearance at each stage, and verify its state after reopening the world. Use `-Scenario radial` for mouse and keyboard wheel navigation, favorites, and settings. Use `-Scenario stair-outline` for the focused stair preview test.
 
 For a sibling Gradle build add `includeBuild('../hammer')` to settings and depend on `net.j40climb.florafauna_hammer:florafauna_hammer:0.0.1+26.1`. Select the matching Minecraft branch when building. Server and client both need the same mod version.
 
@@ -32,9 +32,7 @@ Craft one Hammer and fit its two cores in order. In the Smithing Table, leave th
 
 Hold **C** to inspect the stage and hover over a locked wedge to see which core it needs. Tap **C** to cycle available shapes or favorites. Double-tap **C** for Single Block at any stage.
 
-### Energy core
-
-The Forged head has a fixed iron insert. The Resonant core rotates between the striking faces, with a violet glow that fades as charge runs down. The Tempest core rotates faster and has two luminous poles. Charging a throw, scanning, slamming and calling lightning briefly change the light at the core. The rotating insert is part of the item model in both hands, the inventory and the world.
+All three stages use the original Hammer model and textures. The Hammer name and Hold-C menu show its stage. Powered Hammers show their charge in the tooltip and on the item bar.
 
 ## Data Components
 

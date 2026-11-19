@@ -126,8 +126,7 @@ public final class HammerRegistry {
             DATA_COMPONENTS.registerComponentType("multi_tool_ability",
                     builder -> builder.persistent(MultiToolAbilityData.CODEC).networkSynchronized(MultiToolAbilityData.STREAM_CODEC));
     //? if >=26.3 {
-    /*
-    public static final Supplier<AttachmentType<Boolean>> PRECISION_MINING = ATTACHMENT_TYPES.register("precision_mining",
+    /*public static final Supplier<AttachmentType<Boolean>> PRECISION_MINING = ATTACHMENT_TYPES.register("precision_mining",
             () -> AttachmentType.builder(() -> false).build());
     *///?}
 

@@ -13,11 +13,9 @@ Stonecutter builds both Minecraft versions from this checkout. The shared source
 
 Use `gradlew.bat` on Windows. Pick the jar from `versions/<target>-neoforge/build/libs/` for the Minecraft version you play. To run a single server test, pass `-PgameTestFilter=florafauna_hammer:hammer_tunnel_gaps` to the version's GameTest task.
 
-For client checks, run `./scripts/test_hammer.ps1 -Target 26.1 -SourceWorld <closed-save-directory>` in PowerShell 7. Choose a save from the same Minecraft version. Both targets support the quarry and stair-outline scenarios. On 26.1 you can also select `-Scenario powers`, `radial`, or `progression`. Disposable saves, screenshots and logs are under `.tmp/world-playtests/`.
+For client checks, run `./scripts/test_hammer.ps1 -Target 26.1 -SourceWorld <closed-save-directory>` in PowerShell 7. Choose a save from the same Minecraft version. Both targets support the quarry and stair-outline scenarios. You can also select `-Scenario powers`, `radial`, or `progression`. Disposable saves, screenshots and logs are under `.tmp/world-playtests/`.
 
 With FloraFauna's Stonecutter companion support, run `./gradlew -PdevMods=all :26.3-neoforge:runClient` from FloraFauna to play with all three mods. Use `:26.1-neoforge:runClient` for 26.1. Pass `-PhammerDir=<checkout>` and `-PfrenchiesDir=<checkout>` when using feature worktrees.
-
-The gameplay guide below describes the 26.1 Hammer, including stage upgrades, seismic scanning, the ground slam and the combined radial controls. The 26.3 target retains its existing mining shapes, charged throw and action wheel. [26.3 controls and mining guide](https://github.com/jeremyepling/hammer/blob/97dd1fe5cc7608f2a8407ca0deaaa197962d14e7/README.md#key-bindings)
 
 ## Survival progression
 

@@ -10,9 +10,6 @@ param(
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false
 $checkout = Split-Path $PSScriptRoot -Parent
-if ($Target -eq '26.3' -and $Scenario -notin 'hammer','stair-outline') {
-    throw "The $Scenario scenario requires the 26.1 Hammer."
-}
 $world = (Resolve-Path -LiteralPath $SourceWorld).Path
 $level = Join-Path $world 'level.dat'
 if (!(Test-Path -LiteralPath $level -PathType Leaf)) { throw "Missing level.dat in $world" }

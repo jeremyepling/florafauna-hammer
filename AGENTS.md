@@ -1,6 +1,6 @@
 # Hammer development
 
-Use Java 25 and the checked-in Gradle wrapper. Stonecutter builds 26.1 and 26.3 from one checkout with 26.1 as the VCS version. Check `versions/<target>-neoforge/gradle.properties` for the matching NeoForge version. The loader mod ID is `florafauna_hammer`. Existing Hammer items, projectiles, components and packets use the legacy `florafauna` namespace. Keep the mod runnable with just Minecraft and NeoForge.
+Use Java 25 and the checked-in Gradle wrapper. Stonecutter builds 26.1 and 26.3 from one checkout with 26.1 as the VCS version. Check `versions/<target>-neoforge/gradle.properties` for the matching NeoForge version. Keep gameplay, recipes, progression, controls and player interfaces shared across both targets. Use version conditions for Minecraft or NeoForge API differences. The loader mod ID is `florafauna_hammer`. Existing Hammer items, projectiles, components and packets use the legacy `florafauna` namespace. Keep the mod runnable with just Minecraft and NeoForge.
 
 Test the behavior affected by each edit. JUnit, headless GameTests and the scripted quarry or action-wheel client can overlap independent work in other worktrees. The scripted client sends input inside Minecraft. Reserve the desktop only for steps that use real input or focus.
 

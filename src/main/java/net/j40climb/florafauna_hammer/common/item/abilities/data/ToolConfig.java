@@ -3,7 +3,9 @@ package net.j40climb.florafauna_hammer.common.item.abilities.data;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.netty.buffer.ByteBuf;
+//? if <26.3 {
 import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
+//?}
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -116,8 +118,10 @@ public record ToolConfig(boolean fortune, boolean silkTouch, MiningSpeed miningS
         return Component.translatable("tooltip.florafauna.hammer.speed",
                 Component.translatable("gui.florafauna.tool_config.speed." + miningSpeed.getSerializedName()));
     }
+    //? if <26.3 {
 
     public MiningSpeed effectiveSpeed(HammerStage stage) {
         return stage.allows(miningSpeed) ? miningSpeed : MiningSpeed.EFFICIENCY;
     }
+    //?}
 }

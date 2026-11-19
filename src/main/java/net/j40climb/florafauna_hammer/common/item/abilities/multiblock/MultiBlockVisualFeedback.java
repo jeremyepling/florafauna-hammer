@@ -1,7 +1,9 @@
 package net.j40climb.florafauna_hammer.common.item.abilities.multiblock;
 
 import net.j40climb.florafauna_hammer.HammerMod;
+//? if <26.3 {
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningModeData;
+//?}
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -22,7 +24,11 @@ public final class MultiBlockVisualFeedback {
     private static Direction hitFace = Direction.UP;
     private static int ticksMining;
     private static List<BlockPos> cracks = List.of();
+    //? if <26.3 {
     private static MiningModeData crackMode;
+    //?} else {
+    /*private static boolean refreshCracks;
+    *///?}
 
     private MultiBlockVisualFeedback() {}
 
@@ -43,10 +49,15 @@ public final class MultiBlockVisualFeedback {
                     clear(player);
                     return;
                 }
+                //? if <26.3 {
                 var mode = MiningModeData.effective(event.getItemStack());
                 if (ticksMining == 0 || !mode.equals(crackMode)) {
                     draw(player, -1);
                     crackMode = mode;
+                //?} else {
+                /*if (ticksMining == 0 || refreshCracks) {
+                    refreshCracks = false;
+                *///?}
                     cracks = MultiBlockPatterns.plan(player, event.getItemStack(), target, hitFace).blocks().stream()
                             .filter(pos -> !pos.equals(target)).toList();
                 }
@@ -80,6 +91,14 @@ public final class MultiBlockVisualFeedback {
         ticksMining = 0;
     }
 
+    //? if >=26.3 {
+    /*public static void invalidatePattern(Player player) {
+        draw(player, -1);
+        cracks = List.of();
+        refreshCracks = true;
+    }
+
+    *///?}
     private static void draw(Player player, int stage) {
         // Local overlays use negative IDs. Distinct vein positions can share BlockPos.hashCode().
         for (int i = 0; i < cracks.size(); i++) {

@@ -5,7 +5,9 @@ import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningSpeed;
 import net.j40climb.florafauna_hammer.setup.ClientSetup;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.client.KeyMapping;
+//? if <26.3 {
 import net.j40climb.florafauna_hammer.common.item.abilities.data.HammerAction;
+//?}
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -22,6 +24,9 @@ import javax.imageio.ImageIO;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Set;
+//? if >=26.3 {
+/*import net.minecraft.world.phys.Vec3;
+*///?}
 
 /** Deterministic rock, including an entrance and a chunk boundary. Runs only in the disposable copy. */
 final class HammerQuarryPlaytest {
@@ -47,6 +52,7 @@ final class HammerQuarryPlaytest {
         }
         cutThenWalk(t, 0);
         cutThenWalk(t, 1);
+        //? if <26.3 {
         HammerPlaytest.openMenu(t);
         t.client("Star Walkable Tunnel without changing the active stair shape", mc -> {
             HammerRadialPlaytest.favorite(mc, MiningShape.WALKABLE_TUNNEL);
@@ -57,6 +63,7 @@ final class HammerQuarryPlaytest {
             return mode.shape() == MiningShape.TUNNEL_DOWN && mode.isFavorite(MiningShape.WALKABLE_TUNNEL);
         });
         HammerMenuPlaytest.choose(t, HammerAction.TILL);
+        //?}
         t.screenshot("hammer-quarry-before-restart");
     }
 
@@ -67,8 +74,10 @@ final class HammerQuarryPlaytest {
             var hammer = player.getMainHandItem();
             Playtest.require(hammer.is(HammerRegistry.HAMMER.get())
                     && hammer.get(HammerRegistry.MULTI_BLOCK_MINING).shape() == MiningShape.TUNNEL_DOWN
+                    //? if <26.3 {
                     && hammer.get(HammerRegistry.MULTI_BLOCK_MINING).isFavorite(MiningShape.WALKABLE_TUNNEL)
                     && hammer.get(HammerRegistry.HAMMER_ACTION) == HammerAction.TILL
+                    //?}
                     && hammer.get(HammerRegistry.TOOL_CONFIG).miningSpeed() == MiningSpeed.INSTABREAK,
                     "Lost the selected Hammer or its configuration on rejoin");
         });
@@ -85,7 +94,11 @@ final class HammerQuarryPlaytest {
         BlockPos face = face(flight);
         String label = "flight " + (flight + 1);
         t.awaitClient("Aim at the next intact rock face for " + label, mc -> {
+            //? if <26.3 {
             mc.player.lookAt(EntityAnchorArgument.Anchor.EYES, face.getCenter().add(0, 0, -0.5));
+            //?} else {
+            /*mc.player.lookAt(EntityAnchorArgument.Anchor.EYES, Vec3.atCenterOf(face).add(0, 0, -0.5));
+            *///?}
             return mc.player.onGround() && mc.hitResult instanceof BlockHitResult hit
                     && hit.getType() == HitResult.Type.BLOCK && hit.getBlockPos().equals(face)
                     && hit.getDirection() == Direction.NORTH && mc.level.getBlockState(face).is(Blocks.STONE);

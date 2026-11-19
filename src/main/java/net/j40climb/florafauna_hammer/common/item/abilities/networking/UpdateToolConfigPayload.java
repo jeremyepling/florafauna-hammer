@@ -3,11 +3,15 @@ package net.j40climb.florafauna_hammer.common.item.abilities.networking;
 import io.netty.buffer.ByteBuf;
 import net.j40climb.florafauna_hammer.HammerMod;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.ToolConfig;
+//? if <26.3 {
 import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
+//?}
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.core.Holder;
 import net.minecraft.network.codec.StreamCodec;
+//? if <26.3 {
 import net.minecraft.network.codec.ByteBufCodecs;
+//?}
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
@@ -22,28 +26,42 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
  * Sent from client to server when the player changes config settings.
  * Works with any item that has the TOOL_CONFIG data component.
  */
+//? if <26.3 {
 public record UpdateToolConfigPayload(int slot, ToolConfig config) implements CustomPacketPayload {
+//?} else {
+/*public record UpdateToolConfigPayload(ToolConfig config) implements CustomPacketPayload {
+*///?}
 
     public static final Type<UpdateToolConfigPayload> TYPE = new Type<>(
             Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "update_tool_config")
     );
 
     public static final StreamCodec<ByteBuf, UpdateToolConfigPayload> STREAM_CODEC = StreamCodec.composite(
+            //? if <26.3 {
             ByteBufCodecs.VAR_INT, UpdateToolConfigPayload::slot,
+            //?}
             ToolConfig.STREAM_CODEC,
             UpdateToolConfigPayload::config,
             UpdateToolConfigPayload::new
     );
 
     public static void onServerReceived(final UpdateToolConfigPayload data, final IPayloadContext context) {
+        //? if <26.3 {
         if (context.player().getInventory().getSelectedSlot() == data.slot) {
             applyToHeldItem(context.player(), data.config);
         }
+        //?} else {
+        /*applyToHeldItem(context.player(), data.config);
+        *///?}
     }
 
     public static void applyToHeldItem(Player player, ToolConfig config) {
         ItemStack stack = player.getMainHandItem();
+        //? if <26.3 {
         if (!stack.has(HammerRegistry.TOOL_CONFIG) || !HammerStage.of(stack).allows(config.miningSpeed())) return;
+        //?} else {
+        /*if (!stack.has(HammerRegistry.TOOL_CONFIG)) return;
+        *///?}
         stack.set(HammerRegistry.TOOL_CONFIG, config);
         var registries = player.level().registryAccess();
         Holder<Enchantment> fortune = registries.holderOrThrow(Enchantments.FORTUNE);

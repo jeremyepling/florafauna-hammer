@@ -8,14 +8,20 @@ plugins {
 
 group = 'net.j40climb.florafauna_hammer'
 version = "0.0.1+${minecraft_version}"
+base.archivesName = mod_id
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 repositories { mavenCentral() }
 
+// Each target adds its own gameplay classes and assets to the shared sources.
+sourceSets.main.java.srcDir 'target/main/java'
+sourceSets.main.resources.srcDir 'target/main/resources'
 sourceSets.create('playtest') {
+    java.srcDir 'target/playtest/java'
     compileClasspath += sourceSets.main.compileClasspath + sourceSets.main.output
     runtimeClasspath += sourceSets.main.runtimeClasspath
 }
 sourceSets.test {
+    java.srcDir 'target/test/java'
     compileClasspath += sourceSets.main.compileClasspath
     runtimeClasspath += sourceSets.main.runtimeClasspath
 }
@@ -24,7 +30,7 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-tasks.named('jar') { from 'LICENSE.txt' }
+tasks.named('jar') { from rootProject.file('LICENSE.txt') }
 tasks.named('test') { useJUnitPlatform() }
 tasks.named('check') { dependsOn 'compilePlaytestJava' }
 tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
@@ -55,7 +61,7 @@ neoForge {
         if (playtestId) {
             worldPlaytest {
                 client()
-                def directory = file(".tmp/world-playtests/${playtestId}/hammer")
+                def directory = rootProject.file(".tmp/world-playtests/${playtestId}/hammer")
                 gameDirectory = directory
                 programArguments.addAll '--width', '960', '--height', '540', '--quickPlaySingleplayer', 'playtest'
                 systemProperty 'florafauna.playtest.directory', directory.absolutePath
@@ -80,5 +86,10 @@ processResources {
 }
 
 publishing {
-    publications { mavenJava(MavenPublication) { from components.java } }
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId = mod_id
+            from components.java
+        }
+    }
 }

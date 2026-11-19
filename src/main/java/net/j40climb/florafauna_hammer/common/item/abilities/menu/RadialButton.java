@@ -5,6 +5,7 @@ import com.mojang.blaze3d.pipeline.RenderPipeline;
 //?} else {
 /*import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 *///?}
+import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -76,12 +77,12 @@ final class RadialButton extends Button {
 
     @Override
     protected boolean isValidClickButton(MouseButtonInfo info) {
-        return super.isValidClickButton(info) || (info.button() == 1 && alternate != null);
+        return super.isValidClickButton(info) || (info.button() == InputConstants.MOUSE_BUTTON_RIGHT && alternate != null);
     }
 
     @Override
     public void onClick(MouseButtonEvent event, boolean twice) {
-        if (event.button() == 1) toggleFavorite();
+        if (event.button() == InputConstants.MOUSE_BUTTON_RIGHT) toggleFavorite();
         else super.onClick(event, twice);
     }
 

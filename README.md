@@ -1,18 +1,21 @@
 # Hammer
 
-A standalone NeoForge mod for Minecraft 26.1 and Java 25. Find the Hammer in Tools & Utilities or use `/give @s florafauna:hammer`. Existing Hammer items, ability components and projectiles keep their original identifiers. The split FloraFauna mod (0.0.2 or later) is optional.
+A standalone NeoForge mod for Minecraft 26.1 and 26.3, built with Java 25. Find the Hammer in Tools & Utilities or use `/give @s florafauna:hammer`. Existing Hammer items, ability components and projectiles keep their original identifiers. The split FloraFauna mod (0.0.2 or later) is optional.
 
 ## Build and test
 
-Run `./gradlew build runGameTestServer` from this checkout. The jar is `build/libs/florafauna_hammer-0.0.1+26.1.jar`. The same command works with `gradlew.bat` on Windows. Models and tool tags are included in source.
+Stonecutter builds both Minecraft versions from this checkout. The shared source is under `src/`, with 26.1 as the editable default. Each target has its own NeoForge version and build output.
 
-Use `./gradlew test` for the world-free JUnit suite or `./gradlew "-PgameTestFilter=florafauna_hammer:hammer_tunnel_gaps" runGameTestServer` for one server scenario. With PowerShell 7, run `./scripts/test_hammer.ps1 -SourceWorld <closed-save-directory>` for two real client phases, including save and reload. The runner copies the source world and keeps its logs and screenshots under `.tmp/world-playtests/`. Add `-Scenario powers` to exercise chest interaction, a scan through a wall, marker expiry and a jump slam. Use `-Scenario progression` to craft and upgrade a named Hammer in Survival, check its charge bar and appearance at each stage, and verify its state after reopening the world. Use `-Scenario radial` for mouse and keyboard wheel navigation, favorites, and settings. Use `-Scenario stair-outline` for the focused stair preview test.
+```sh
+./gradlew :26.1-neoforge:build :26.1-neoforge:runGameTestServer
+./gradlew :26.3-neoforge:build :26.3-neoforge:runGameTestServer
+```
 
-For a sibling Gradle build add `includeBuild('../hammer')` to settings and depend on `net.j40climb.florafauna_hammer:florafauna_hammer:0.0.1+26.1`. Select the matching Minecraft branch when building. Server and client both need the same mod version.
+Use `gradlew.bat` on Windows. Pick the jar from `versions/<target>-neoforge/build/libs/` for the Minecraft version you play. To run a single server test, pass `-PgameTestFilter=florafauna_hammer:hammer_tunnel_gaps` to the version's GameTest task.
 
-With FloraFauna, Hammer and Frenchies checked out side by side on matching versions, launch all three from the FloraFauna Stonecutter checkout with `.\gradlew.bat -PdevMods=all :26.1-neoforge:runClient`.
+For client checks, run `./scripts/test_hammer.ps1 -Target 26.1 -SourceWorld <closed-save-directory>` in PowerShell 7. Choose a save from the same Minecraft version. Both targets support the quarry and stair-outline scenarios. On 26.1 you can also select `-Scenario powers`, `radial`, or `progression`. Disposable saves, screenshots and logs are under `.tmp/world-playtests/`.
 
-Run `/florafauna ability` with a subcommand (`lightning`, `teleport`, `throw`, `mining`, `config`, `all` or `clear`) to edit the held item in creative mode or with game master permissions.
+The gameplay guide below describes the 26.1 Hammer. The 26.3 target retains its existing mining shapes, charged throw and action wheel. Stage upgrades, seismic scanning, the ground slam and the combined radial controls are available on 26.1.
 
 ## Survival progression
 

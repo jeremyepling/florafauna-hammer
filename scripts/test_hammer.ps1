@@ -4,11 +4,15 @@
 param(
     [Parameter(Mandatory)] [string]$SourceWorld,
     [ValidateSet('hammer','stair-outline','powers','radial','progression')][string]$Scenario = 'hammer',
-    [switch]$Offline
+    [switch]$Offline,
+    [ValidateSet('26.1','26.3')][string]$Target = '26.1'
 )
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false
 $checkout = Split-Path $PSScriptRoot -Parent
+if ($Target -eq '26.3' -and $Scenario -notin 'hammer','stair-outline') {
+    throw "The $Scenario scenario requires the 26.1 Hammer."
+}
 $world = (Resolve-Path -LiteralPath $SourceWorld).Path
 $level = Join-Path $world 'level.dat'
 if (!(Test-Path -LiteralPath $level -PathType Leaf)) { throw "Missing level.dat in $world" }
@@ -45,7 +49,8 @@ try {
             throw 'Source save changed during the copy.'
         }
         Set-Content -LiteralPath (Join-Path $gameDir '.florafauna-playtest') -Value $Scenario
-        $gameOptions = @('version:4786','pauseOnLostFocus:false','key_key.florafauna.throw_item:key.keyboard.comma','skipMultiplayerWarning:true','onboardAccessibility:false','tutorialStep:none','autoJump:false','renderDistance:4','simulationDistance:5')
+        $optionsVersion = if ($Target -eq '26.1') { 4786 } else { 5023 }
+        $gameOptions = @("version:$optionsVersion",'pauseOnLostFocus:false','key_key.florafauna.throw_item:key.keyboard.comma','skipMultiplayerWarning:true','onboardAccessibility:false','tutorialStep:none','autoJump:false','renderDistance:4','simulationDistance:5')
         if ($Scenario -eq 'radial') { $gameOptions += 'key_key.florafauna.cycle_mining_mode:key.keyboard.v' }
         $gameOptions | Set-Content -LiteralPath (Join-Path $gameDir 'options.txt')
     } finally { if ($lock) { $lock.Dispose() } }
@@ -54,7 +59,7 @@ try {
     foreach ($phase in $phases) {
         Write-Host "Launching Hammer phase $phase ..."
         $log = Join-Path $gameDir "phase-$phase.log"
-        & .\gradlew.bat @options "-PplaytestId=$runId" "-PplaytestPhase=$phase" "-PplaytestScenario=$Scenario" runWorldPlaytest *> $log
+        & .\gradlew.bat @options "-PplaytestId=$runId" "-PplaytestPhase=$phase" "-PplaytestScenario=$Scenario" ":$Target-neoforge:runWorldPlaytest" *> $log
         $resultPath = Join-Path $gameDir "phase-$phase.result"
         $result = if (Test-Path -LiteralPath $resultPath) { (Get-Content -Raw -LiteralPath $resultPath).Trim() } else { 'Missing client result' }
         if ($LASTEXITCODE -ne 0 -or $result -ne 'PASS') { throw "Hammer phase $phase failed: $result. See $log" }

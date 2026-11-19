@@ -29,7 +29,11 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
+//? if <26.3 {
 import org.lwjgl.glfw.GLFW;
+//?} else {
+/*import com.mojang.blaze3d.platform.InputConstants;
+*///?}
 
 public final class HammerMenuScreen extends Screen {
     private static final String MENU = "gui.florafauna.hammer_menu.";
@@ -194,7 +198,11 @@ public final class HammerMenuScreen extends Screen {
             case PATH -> Items.IRON_SHOVEL;
             case TILL -> Items.IRON_HOE;
             case THROW -> tool.getItem();
+            //? if <26.3 {
             case LIGHTNING -> Items.LIGHTNING_ROD;
+            //?} else {
+            /*case LIGHTNING -> Items.LIGHTNING_ROD.weathering().unaffected();
+            *///?}
             case TELEPORT -> Items.ENDER_PEARL;
             case SCAN -> Items.ECHO_SHARD;
         };
@@ -314,14 +322,26 @@ public final class HammerMenuScreen extends Screen {
         // A repeat of the held control must never activate a focused widget, even when remapped to Enter or F.
         if (ClientSetup.CYCLE_MINING_MODE_KEY.get().matches(event)) return true;
         switch (event.key()) {
+            //? if <26.3 {
             case GLFW.GLFW_KEY_BACKSPACE -> {
+            //?} else {
+            /*case InputConstants.KEY_BACKSPACE -> {
+            *///?}
                 if (settingsOpen && action != null) toggleSettings();
                 else onClose();
                 return true;
             }
+            //? if <26.3 {
             case GLFW.GLFW_KEY_RIGHT, GLFW.GLFW_KEY_DOWN, GLFW.GLFW_KEY_LEFT, GLFW.GLFW_KEY_UP -> {
+            //?} else {
+            /*case InputConstants.KEY_RIGHT, InputConstants.KEY_DOWN, InputConstants.KEY_LEFT, InputConstants.KEY_UP -> {
+            *///?}
                 keyboardNavigation = true;
+                //? if <26.3 {
                 int step = event.key() == GLFW.GLFW_KEY_RIGHT || event.key() == GLFW.GLFW_KEY_DOWN ? 1 : -1;
+                //?} else {
+                /*int step = event.key() == InputConstants.KEY_RIGHT || event.key() == InputConstants.KEY_DOWN ? 1 : -1;
+                *///?}
                 var wedges = getFocused() == rightHub || rightWheel.contains(getFocused()) ? rightWheel : leftWheel;
                 int index = wedges.indexOf(getFocused());
                 if (index < 0 && step < 0) index = 0;
@@ -334,7 +354,11 @@ public final class HammerMenuScreen extends Screen {
                 }
                 return true;
             }
+            //? if <26.3 {
             case GLFW.GLFW_KEY_F -> {
+            //?} else {
+            /*case InputConstants.KEY_F -> {
+            *///?}
                 if (mining == null) break;
                 if (favoriteKeyDown) return true;
                 favoriteKeyDown = true;
@@ -342,7 +366,11 @@ public final class HammerMenuScreen extends Screen {
                 if (shape != null) return shape.toggleFavorite();
                 return getFocused() instanceof RadialButton button && button.toggleFavorite();
             }
+            //? if <26.3 {
             case GLFW.GLFW_KEY_TAB -> keyboardNavigation = true;
+            //?} else {
+            /*case InputConstants.KEY_TAB -> keyboardNavigation = true;
+            *///?}
         }
         return super.keyPressed(event);
     }
@@ -353,7 +381,11 @@ public final class HammerMenuScreen extends Screen {
             KeyInputEvents.releaseMenuHold(minecraft);
             return true;
         }
+        //? if <26.3 {
         if (event.key() == GLFW.GLFW_KEY_F) favoriteKeyDown = false;
+        //?} else {
+        /*if (event.key() == InputConstants.KEY_F) favoriteKeyDown = false;
+        *///?}
         return super.keyReleased(event);
     }
 

@@ -84,13 +84,21 @@ public final class SeismicScanEffects {
 
     private static void drawMarkers(GuiGraphicsExtractor graphics, DeltaTracker delta) {
         var mc = Minecraft.getInstance();
+        //? if <26.3 {
         if (markers.isEmpty() || mc.level != world || mc.options.hideGui) return;
+        //?} else {
+        /*if (markers.isEmpty() || mc.level != world || mc.gui.hud.isHidden()) return;
+        *///?}
         float age = world.getGameTime() - markerStart + delta.getGameTimeDeltaPartialTick(false);
         int alpha = Math.clamp((int) ((1 - age / SeismicScanner.HIGHLIGHT_TICKS) * 225), 0, 225);
         if (alpha < 4) return;
         int color = alpha << 24 | 0xD1A6FF;
         int halo = (alpha / 3) << 24 | 0xA667FC;
+        //? if <26.3 {
         var camera = mc.gameRenderer.getMainCamera();
+        //?} else {
+        /*var camera = mc.gameRenderer.mainCamera();
+        *///?}
         var forward = camera.forwardVector();
         for (var block : markers) {
             // The server sends the lower corner of a two-block cell.

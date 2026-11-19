@@ -53,12 +53,14 @@ public class ThrownItemRenderer extends EntityRenderer<ThrownItemEntity, ThrownI
         // First rotate around Y to match horizontal direction
         //? if <26.3 {
         poseStack.mulPose(Axis.YP.rotationDegrees(state.yRot + 90.0f));
-        // Then pitch forward 90 degrees so item points in direction of travel
-        poseStack.mulPose(Axis.XP.rotationDegrees(state.xRot + 90.0f));
         //?} else {
         /*poseStack.rotateDegrees(Axis.YP, state.yRot + 90.0f);
+        *///?}
         // Then pitch forward 90 degrees so item points in direction of travel
-        poseStack.rotateDegrees(Axis.XP, state.xRot + 90.0f);
+        //? if <26.3 {
+        poseStack.mulPose(Axis.XP.rotationDegrees(state.xRot + 90.0f));
+        //?} else {
+        /*poseStack.rotateDegrees(Axis.XP, state.xRot + 90.0f);
         *///?}
 
         // Scale up slightly for visibility

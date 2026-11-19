@@ -48,19 +48,10 @@ public final class MultiBlockPatterns {
     }
 
     public static Plan plan(Player player, ItemStack tool, BlockPos center, Direction face) {
-        //? if <26.3 {
         MiningModeData mode = MiningModeData.effective(tool);
-        //?} else {
-        /*MiningModeData mode = tool.getOrDefault(HammerRegistry.MULTI_BLOCK_MINING, MiningModeData.DEFAULT);
-        *///?}
         Level level = player.level();
         if (!isMineable(level, player, tool, mode, center)) {
             return new Plan(List.of(), List.of(), face);
-        //? if >=26.3 {
-        /*}
-        if (Boolean.TRUE.equals(player.getExistingDataOrNull(HammerRegistry.PRECISION_MINING))) {
-            return new Plan(List.of(center), List.of(), face);
-        *///?}
         }
         return switch (mode.shape()) {
             case SINGLE -> new Plan(List.of(center), List.of(), face);

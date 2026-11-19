@@ -39,26 +39,42 @@ public class KeyInputEvents {
             holdingThrow = false;
         }
         var key = ClientSetup.THROW_ITEM_KEY.get();
+        //? if <26.3 {
         if (holdingThrow && (mc.screen != null || player.getInventory().getSelectedSlot() != throwSlot
+        //?} else {
+        /*if (holdingThrow && (mc.gui.screen() != null || player.getInventory().getSelectedSlot() != throwSlot
+        *///?}
                 || !held.is(HammerRegistry.HAMMER.get()))) {
             ClientPacketDistributor.sendToServer(new ChargedThrowPayload(ChargedThrowPayload.CANCEL));
             holdingThrow = false;
         }
         while (key.consumeClick()) {
             if (held.is(HammerRegistry.HAMMER.get())) {
+                //? if <26.3 {
                 if (mc.screen == null && !holdingThrow && held.has(HammerRegistry.THROWABLE_ABILITY)) {
+                //?} else {
+                /*if (mc.gui.screen() == null && !holdingThrow && held.has(HammerRegistry.THROWABLE_ABILITY)) {
+                *///?}
                     holdingThrow = true;
                     throwSlot = player.getInventory().getSelectedSlot();
                     ClientPacketDistributor.sendToServer(new ChargedThrowPayload(ChargedThrowPayload.PRESS));
                 }
             } else if (held.has(HammerRegistry.THROWABLE_ABILITY)) {
+                //? if <26.3 {
                 player.swing(InteractionHand.MAIN_HAND);
+                //?} else {
+                /*player.swing(InteractionHand.MAIN_HAND, held.getAttackAnimation(), false);
+                *///?}
                 ClientPacketDistributor.sendToServer(new ThrowItemPayload(true));
             }
         }
         if (holdingThrow && !key.isDown()) {
             holdingThrow = false;
+            //? if <26.3 {
             player.swing(InteractionHand.MAIN_HAND);
+            //?} else {
+            /*player.swing(InteractionHand.MAIN_HAND, held.getAttackAnimation(), false);
+            *///?}
             ClientPacketDistributor.sendToServer(new ChargedThrowPayload(ChargedThrowPayload.RELEASE));
         }
     }
@@ -91,13 +107,21 @@ public class KeyInputEvents {
             return;
         }
         // Escape, changing worlds, or another screen may have consumed the old release.
+        //? if <26.3 {
         if (menuHold && action == InputConstants.PRESS && mc.screen == null) resetMenuHold();
+        //?} else {
+        /*if (menuHold && action == InputConstants.PRESS && mc.gui.screen() == null) resetMenuHold();
+        *///?}
         updateControl(mc);
     }
 
     /** Opening a Screen clears KeyMapping.isDown. Its keyboard/mouse release is the authoritative edge. */
     public static void releaseMenuHold(Minecraft mc) {
+        //? if <26.3 {
         if (mc.screen instanceof HammerMenuScreen screen) screen.onClose();
+        //?} else {
+        /*if (mc.gui.screen() instanceof HammerMenuScreen screen) screen.onClose();
+        *///?}
         resetMenuHold();
         var key = ClientSetup.CYCLE_MINING_MODE_KEY.get();
         key.setDown(false);
@@ -129,15 +153,27 @@ public class KeyInputEvents {
         var held = player == null ? ItemStack.EMPTY : player.getMainHandItem();
         boolean usable = held.has(HammerRegistry.MULTI_BLOCK_MINING) || held.has(HammerRegistry.HAMMER_ACTION)
                 || held.has(HammerRegistry.TOOL_CONFIG);
+        //? if <26.3 {
         if (player != gesturePlayer || slot != gestureSlot || mc.screen != null || !usable) {
+        //?} else {
+        /*if (player != gesturePlayer || slot != gestureSlot || mc.gui.screen() != null || !usable) {
+        *///?}
             gesture.reset();
+            //? if <26.3 {
             waitForRelease = down && (wasDown || mc.screen != null || !usable);
+            //?} else {
+            /*waitForRelease = down && (wasDown || mc.gui.screen() != null || !usable);
+            *///?}
             wasDown = false;
             gesturePlayer = player;
             gestureSlot = slot;
         }
         if (!down) waitForRelease = false;
+        //? if <26.3 {
         if (mc.screen != null || !usable || waitForRelease) return;
+        //?} else {
+        /*if (mc.gui.screen() != null || !usable || waitForRelease) return;
+        *///?}
 
         long now = System.nanoTime() / 1_000_000L;
         if (wasDown && !down) dispatch(mc, gesture.release(now));
@@ -161,7 +197,11 @@ public class KeyInputEvents {
             case SINGLE -> ClientPacketDistributor.sendToServer(new SelectMiningModePayload(gestureSlot, MiningShape.SINGLE, false));
             case MENU -> {
                 menuHold = true;
+                //? if <26.3 {
                 mc.setScreen(new HammerMenuScreen(gestureSlot, mc.player.getMainHandItem()));
+                //?} else {
+                /*mc.gui.setScreen(new HammerMenuScreen(gestureSlot, mc.player.getMainHandItem()));
+                *///?}
             }
         }
     }

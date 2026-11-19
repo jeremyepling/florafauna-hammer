@@ -41,7 +41,11 @@ public final class HammerAbilityFeedback {
     private static Vec3 handPosition(Player p, InteractionHand hand) {
         boolean right = (p.getMainArm() == HumanoidArm.RIGHT) == (hand == InteractionHand.MAIN_HAND);
         var mc = Minecraft.getInstance();
+        //? if <26.3 {
         var camera = mc.gameRenderer.getMainCamera();
+        //?} else {
+        /*var camera = mc.gameRenderer.mainCamera();
+        *///?}
         if (camera.entity() == p && mc.options.getCameraType().isFirstPerson()) {
             // Particles live in world space; project the held Hammer's screen offset onto a near plane.
             double depth = 0.85;

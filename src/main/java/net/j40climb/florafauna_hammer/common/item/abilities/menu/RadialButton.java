@@ -1,6 +1,10 @@
 package net.j40climb.florafauna_hammer.common.item.abilities.menu;
 
+//? if <26.3 {
 import com.mojang.blaze3d.pipeline.RenderPipeline;
+//?} else {
+/*import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+*///?}
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;

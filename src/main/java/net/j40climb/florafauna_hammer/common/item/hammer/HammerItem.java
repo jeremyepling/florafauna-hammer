@@ -15,7 +15,14 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.util.Unit;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.server.level.ServerPlayer;
+import net.j40climb.florafauna_hammer.common.item.abilities.SeismicScanner;
 import net.minecraft.world.item.Item;
+//? if <26.3 {
+import net.minecraft.world.item.ItemInstance;
+//?}
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ToolMaterial;
 import net.minecraft.world.item.TooltipFlag;
@@ -24,6 +31,10 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.block.state.BlockState;
+//? if <26.3 {
+import net.neoforged.neoforge.common.ItemAbilities;
+import net.neoforged.neoforge.common.ItemAbility;
+//?}
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
@@ -37,7 +48,7 @@ import java.util.function.Consumer;
  * This hammer supports multiple mining modes and speed settings configurable via data components.
  */
 public class HammerItem extends Item {
-    public static final int MAX_CHARGE = 64;
+    public static final int MAX_CHARGE = HammerStage.TEMPEST.capacity();
     /**
      * The tool material configuration for the Energy Hammer.
      * Note: Durability and enchantability are unused since the hammer is unbreakable and not enchantable.
@@ -71,13 +82,24 @@ public class HammerItem extends Item {
                 })
                 .component(HammerRegistry.LIGHTNING_ABILITY, Unit.INSTANCE)
                 .component(HammerRegistry.TELEPORT_SURFACE_ABILITY, Unit.INSTANCE)
-                .component(HammerRegistry.HAMMER_CHARGE, MAX_CHARGE)
+                .component(HammerRegistry.HAMMER_STAGE, HammerStage.FORGED)
                 .component(HammerRegistry.THROWABLE_ABILITY, ThrowableAbilityData.DEFAULT)
                 .component(HammerRegistry.RIGHT_CLICK_ACTION, new RightClickAction(Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "throwable_ability")))
                 .component(HammerRegistry.MULTI_TOOL_ABILITY, MultiToolAbilityData.DEFAULT)
                 .component(HammerRegistry.HAMMER_ACTION, HammerAction.AUTO)
                 .component(DataComponents.UNBREAKABLE, Unit.INSTANCE)
         );
+    }
+
+    @Override
+    public InteractionResult useOn(UseOnContext context) {
+        if (context.getPlayer() == null || !context.getPlayer().onGround()
+                || context.getItemInHand().get(HammerRegistry.HAMMER_ACTION) != HammerAction.SCAN
+                || !HammerAction.SCAN.availableOn(context.getItemInHand())) {
+            return super.useOn(context);
+        }
+        if (context.getPlayer() instanceof ServerPlayer player) SeismicScanner.activate(player, context.getHand());
+        return InteractionResult.SUCCESS;
     }
 
     /**
@@ -105,6 +127,34 @@ public class HammerItem extends Item {
         return false;
     }
 
+    //? if <26.3 {
+    /**
+     * Declares which tool actions this item can perform based on its MULTI_TOOL_ABILITY component.
+     * This is required for getToolModifiedState to work properly.
+     *
+     * @param stack the item stack
+     * @param itemAbility the tool action being checked
+     * @return true if this item can perform the action
+     */
+    @Override
+    public boolean canPerformAction(ItemInstance stack, ItemAbility itemAbility) {
+        MultiToolAbilityData multiTool = stack.get(HammerRegistry.MULTI_TOOL_ABILITY);
+        if (multiTool == null) {
+            return false;
+        }
+        if (itemAbility == ItemAbilities.AXE_STRIP && multiTool.strip()) {
+            return true;
+        }
+        if (itemAbility == ItemAbilities.SHOVEL_FLATTEN && multiTool.flatten()) {
+            return true;
+        }
+        if (itemAbility == ItemAbilities.HOE_TILL && multiTool.till()) {
+            return true;
+        }
+        return false;
+    }
+
+    //?}
     /**
      * Determines if this hammer is the correct tool for mining the given block state.
      * The hammer can mine blocks that are mineable with pickaxe, shovel, axe, hoe, or are sword efficient.
@@ -131,30 +181,54 @@ public class HammerItem extends Item {
     @SuppressWarnings("deprecation")
     @Override
     public void appendHoverText(ItemStack itemStack, TooltipContext context, TooltipDisplay tooltipDisplay, Consumer<Component> tooltipComponents, TooltipFlag tooltipFlag) {
-        MiningModeData miningModeData = itemStack.getOrDefault(HammerRegistry.MULTI_BLOCK_MINING, MiningModeData.DEFAULT);
+        HammerStage stage = HammerStage.of(itemStack);
+        MiningModeData miningModeData = MiningModeData.effective(itemStack);
         tooltipComponents.accept(miningModeData.modeDescription());
         ToolConfig toolConfig = itemStack.getOrDefault(HammerRegistry.TOOL_CONFIG, ToolConfig.DEFAULT);
-        tooltipComponents.accept(toolConfig.speedDescription());
-        tooltipComponents.accept(Component.translatable("tooltip.florafauna.hammer.charge", charge(itemStack), MAX_CHARGE));
-        tooltipComponents.accept(Component.translatable("tooltip.florafauna.hammer.ore_strike", Component.keybind("key.florafauna.throw_item")));
+        tooltipComponents.accept(toolConfig.withMiningSpeed(toolConfig.effectiveSpeed(stage)).speedDescription());
+        if (stage.capacity() > 0) {
+            tooltipComponents.accept(Component.translatable("tooltip.florafauna.hammer.charge", charge(itemStack), stage.capacity()));
+            tooltipComponents.accept(Component.translatable("tooltip.florafauna.hammer.ore_strike", Component.keybind("key.florafauna.throw_item")));
+        }
         super.appendHoverText(itemStack, context, tooltipDisplay, tooltipComponents, tooltipFlag);
     }
 
+    @Override
+    public Component getName(ItemStack stack) {
+        return HammerStage.of(stack).label();
+    }
+
     public static int charge(ItemStack stack) {
-        return Math.clamp(stack.getOrDefault(HammerRegistry.HAMMER_CHARGE, MAX_CHARGE), 0, MAX_CHARGE);
+        int capacity = HammerStage.of(stack).capacity();
+        return Math.clamp(stack.getOrDefault(HammerRegistry.HAMMER_CHARGE, capacity), 0, capacity);
+    }
+
+    @Override
+    public boolean shouldCauseBlockBreakReset(ItemStack oldStack, ItemStack newStack) {
+        return !ItemStack.matchesIgnoringComponents(oldStack, newStack, type -> type == HammerRegistry.HAMMER_CHARGE.get());
     }
 
     @Override
     public void inventoryTick(ItemStack stack, ServerLevel level, Entity owner, @Nullable EquipmentSlot slot) {
-        if (owner instanceof Player && (slot == EquipmentSlot.MAINHAND || slot == EquipmentSlot.OFFHAND)
-                && owner.tickCount % 20 == 0 && charge(stack) < MAX_CHARGE) {
-            stack.set(HammerRegistry.HAMMER_CHARGE, charge(stack) + 1);
+        int capacity = HammerStage.of(stack).capacity();
+        if (capacity == 0) {
+            if (stack.has(HammerRegistry.HAMMER_CHARGE)) stack.remove(HammerRegistry.HAMMER_CHARGE);
+            return;
         }
+        int charge = charge(stack);
+        if (owner instanceof Player && (slot == EquipmentSlot.MAINHAND || slot == EquipmentSlot.OFFHAND)
+                && owner.tickCount % 20 == 0 && charge < capacity) {
+            charge++;
+        }
+        if (stack.getOrDefault(HammerRegistry.HAMMER_CHARGE, -1) != charge) stack.set(HammerRegistry.HAMMER_CHARGE, charge);
     }
 
-    @Override public boolean isBarVisible(ItemStack stack) { return charge(stack) < MAX_CHARGE; }
-    @Override public int getBarWidth(ItemStack stack) { return Math.round(13.0f * charge(stack) / MAX_CHARGE); }
-    @Override public int getBarColor(ItemStack stack) { return 0x42C7C1; }
+    @Override public boolean isBarVisible(ItemStack stack) { return charge(stack) < HammerStage.of(stack).capacity(); }
+    @Override public int getBarWidth(ItemStack stack) {
+        int capacity = HammerStage.of(stack).capacity();
+        return capacity == 0 ? 0 : Math.round(13.0f * charge(stack) / capacity);
+    }
+    @Override public int getBarColor(ItemStack stack) { return 0xAC72ED; }
 
     /**
      * Determines whether this item should display an enchantment glint effect.

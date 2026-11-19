@@ -2,9 +2,7 @@ package net.j40climb.florafauna_hammer.common.item.abilities.networking;
 
 import io.netty.buffer.ByteBuf;
 import net.j40climb.florafauna_hammer.HammerMod;
-//? if <26.3 {
 import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
-//?}
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -47,12 +45,8 @@ public record ChargedThrowPayload(int action) implements CustomPacketPayload {
         } else {
             player.removeData(HammerRegistry.THROW_HOLD);
             if (action == RELEASE && hold != null && hold.hammer == stack && hold.dimension == player.level().dimension() && player.isAlive() && !player.isSpectator()) {
-                //? if <26.3 {
                 boolean charged = HammerStage.of(stack) != HammerStage.FORGED && now - hold.start >= HOLD_TICKS;
                 ThrowItemPayload.throwItem(player, InteractionHand.MAIN_HAND, charged);
-                //?} else {
-                /*ThrowItemPayload.throwItem(player, InteractionHand.MAIN_HAND, now - hold.start >= HOLD_TICKS);
-                *///?}
             }
         }
     }
@@ -64,14 +58,9 @@ public record ChargedThrowPayload(int action) implements CustomPacketPayload {
         if (hold == null) return;
         if (hold.hammer != player.getMainHandItem() || hold.dimension != player.level().dimension() || !player.isAlive() || player.isSpectator()) {
             player.removeData(HammerRegistry.THROW_HOLD);
-        //? if <26.3 {
         } else if (HammerStage.of(hold.hammer) != HammerStage.FORGED && player.level().getGameTime() - hold.start == HOLD_TICKS) {
             player.sendOverlayMessage(Component.translatable("ability.florafauna.ore_strike.ready"));
             HammerCorePayload.send(player, InteractionHand.MAIN_HAND, HammerCorePayload.Cue.READY);
-        //?} else {
-        /*} else if (player.level().getGameTime() - hold.start == HOLD_TICKS) {
-            player.sendOverlayMessage(Component.translatable("ability.florafauna.ore_strike.ready"));
-        *///?}
         }
     }
 

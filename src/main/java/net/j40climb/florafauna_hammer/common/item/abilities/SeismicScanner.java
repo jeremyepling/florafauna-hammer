@@ -113,7 +113,11 @@ public final class SeismicScanner {
                 chunkZ = z >> 4;
                 chunk = level.getChunkSource().getChunkNow(chunkX, chunkZ);
             }
+            //? if <26.3 {
             return chunk != null && chunk.getBlockState(cursor.set(x, y, z)).is(Tags.Blocks.ORES);
+            //?} else {
+            /*return chunk != null && chunk.getBlockState(cursor.set(x, y, z)).is(Tags.BlockItems.ORES.block());
+            *///?}
         }
     }
 

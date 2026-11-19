@@ -30,11 +30,9 @@ import net.neoforged.neoforge.registries.*;
 import java.util.function.Supplier;
 
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.ChargedThrowPayload;
-//? if <26.3 {
 import net.j40climb.florafauna_hammer.common.item.abilities.GroundSlam;
 
 import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
-//?}
 
 import static net.j40climb.florafauna_hammer.common.item.hammer.HammerItem.HAMMER_MATERIAL;
 
@@ -56,7 +54,6 @@ public final class HammerRegistry {
                     .updateInterval(20)
                     .build(THROWN_ITEM_KEY));
 
-    //? if <26.3 {
     public static final DeferredItem<Item> RESONANCE_CORE = ITEMS.registerSimpleItem("resonance_core");
     public static final DeferredItem<Item> TEMPEST_CORE = ITEMS.registerSimpleItem("tempest_core");
 
@@ -64,17 +61,12 @@ public final class HammerRegistry {
             DATA_COMPONENTS.registerComponentType("hammer_stage",
                     builder -> builder.persistent(HammerStage.CODEC).networkSynchronized(HammerStage.STREAM_CODEC));
 
-    //?}
     public static final DeferredItem<Item> HAMMER = ITEMS.registerItem("hammer", properties ->
             new HammerItem(properties.tool(HAMMER_MATERIAL, BlockTags.MINEABLE_WITH_PICKAXE, 8, -2.4f, 0)));
 
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<MiningModeData>> MULTI_BLOCK_MINING =
             DATA_COMPONENTS.registerComponentType("multi_block_mining",
-                    //? if <26.3 {
                     builder -> builder.persistent(MiningModeData.CODEC).networkSynchronized(MiningModeData.STREAM_CODEC).ignoreSwapAnimation());
-                    //?} else {
-                    /*builder -> builder.persistent(MiningModeData.CODEC).networkSynchronized(MiningModeData.STREAM_CODEC));
-                    *///?}
 
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<ToolConfig>> TOOL_CONFIG =
             DATA_COMPONENTS.registerComponentType("tool_config",
@@ -89,22 +81,15 @@ public final class HammerRegistry {
                     builder -> builder.persistent(Unit.CODEC).networkSynchronized(StreamCodec.unit(Unit.INSTANCE)));
 
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> HAMMER_CHARGE =
-            //? if <26.3 {
             DATA_COMPONENTS.registerComponentType("hammer_charge", b -> b.persistent(Codec.intRange(0, HammerStage.TEMPEST.capacity()))
                     .networkSynchronized(ByteBufCodecs.VAR_INT).ignoreSwapAnimation());
-            //?} else {
-            /*DATA_COMPONENTS.registerComponentType("hammer_charge", b -> b.persistent(Codec.intRange(0, HammerItem.MAX_CHARGE))
-                    .networkSynchronized(ByteBufCodecs.VAR_INT));
-            *///?}
 
     public static final Supplier<AttachmentType<ChargedThrowPayload.Hold>> THROW_HOLD = ATTACHMENT_TYPES.register("throw_hold",
             () -> AttachmentType.builder(() -> new ChargedThrowPayload.Hold(ItemStack.EMPTY, net.minecraft.world.level.Level.OVERWORLD, 0)).build());
-    //? if <26.3 {
 
     public static final Supplier<AttachmentType<GroundSlam.Pending>> PENDING_SLAM = ATTACHMENT_TYPES.register("pending_slam",
             () -> AttachmentType.builder(() -> new GroundSlam.Pending(ItemStack.EMPTY, net.minecraft.world.InteractionHand.MAIN_HAND,
                     net.minecraft.world.level.Level.OVERWORLD, 0)).build());
-    //?}
 
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<ThrowableAbilityData>> THROWABLE_ABILITY =
             DATA_COMPONENTS.registerComponentType("throwable_ability",
@@ -116,19 +101,11 @@ public final class HammerRegistry {
 
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<HammerAction>> HAMMER_ACTION =
             DATA_COMPONENTS.registerComponentType("hammer_action",
-                    //? if <26.3 {
                     builder -> builder.persistent(HammerAction.CODEC).networkSynchronized(HammerAction.STREAM_CODEC).ignoreSwapAnimation());
-                    //?} else {
-                    /*builder -> builder.persistent(HammerAction.CODEC).networkSynchronized(HammerAction.STREAM_CODEC));
-                    *///?}
 
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<MultiToolAbilityData>> MULTI_TOOL_ABILITY =
             DATA_COMPONENTS.registerComponentType("multi_tool_ability",
                     builder -> builder.persistent(MultiToolAbilityData.CODEC).networkSynchronized(MultiToolAbilityData.STREAM_CODEC));
-    //? if >=26.3 {
-    /*public static final Supplier<AttachmentType<Boolean>> PRECISION_MINING = ATTACHMENT_TYPES.register("precision_mining",
-            () -> AttachmentType.builder(() -> false).build());
-    *///?}
 
     public static void register(IEventBus bus) {
         ITEMS.register(bus);

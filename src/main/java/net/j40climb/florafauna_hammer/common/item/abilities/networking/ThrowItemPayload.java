@@ -83,9 +83,8 @@ public record ThrowItemPayload(boolean mainHand) implements CustomPacketPayload 
 
         // Add entity to world
         if (!level.addFreshEntity(entity)) return;
-        //? if <26.3 {
         if (charged) HammerCorePayload.send(player, hand, HammerCorePayload.Cue.RELEASE);
-        //?} else {
+        //? if >=26.3 {
         /*player.swing(hand, stack.getAttackAnimation(), false);
         *///?}
 

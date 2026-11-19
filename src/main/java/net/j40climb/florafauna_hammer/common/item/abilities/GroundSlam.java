@@ -73,8 +73,13 @@ public final class GroundSlam {
         player.setData(HammerRegistry.PENDING_SLAM, new Pending(hammer, hand, level.dimension(), now));
         Vec3 velocity = player.getDeltaMovement();
         player.setDeltaMovement(velocity.x * 0.35, Math.min(velocity.y, -DOWNWARD_SPEED), velocity.z * 0.35);
+        //? if <26.3 {
         player.hurtMarked = true; // Sync the server impulse to the controlling client.
         player.swing(hand, true);
+        //?} else {
+        /*player.syncVelocity = true; // Sync the server impulse to the controlling client.
+        player.swing(hand, hammer.getAttackAnimation(), true);
+        *///?}
         level.sendParticles(new DustParticleOptions(VIOLET, 1.2F), player.getX(), player.getY() + 0.8, player.getZ(),
                 5, 0.3, 0.45, 0.3, 0);
         level.playSound(null, player.blockPosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.PLAYERS, 1.1F, 0.65F);
@@ -133,7 +138,11 @@ public final class GroundSlam {
                     || mob instanceof OwnableEntity owned && owned.getOwnerReference() != null) continue;
             double force = strength(mob.distanceTo(player));
             if (force <= 0 || !mob.hurtServer(level, player.damageSources().playerAttack(player), (float)(MAX_DAMAGE * force))) continue;
+            //? if <26.3 {
             mob.knockback(MAX_KNOCKBACK * force, player.getX() - mob.getX(), player.getZ() - mob.getZ());
+            //?} else {
+            /*mob.knockback(MAX_KNOCKBACK * force, player.getX() - mob.getX(), player.getZ() - mob.getZ(), player.damageSources().playerAttack(player), (float)(MAX_DAMAGE * force));
+            *///?}
         }
         Vec3 center = player.position().add(0, 0.13, 0);
         level.playSound(null, player.blockPosition(), SoundEvents.MACE_SMASH_GROUND_HEAVY, SoundSource.PLAYERS, 1.4F, 0.85F);

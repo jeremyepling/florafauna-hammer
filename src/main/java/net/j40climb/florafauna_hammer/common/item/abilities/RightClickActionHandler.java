@@ -4,27 +4,18 @@ import net.j40climb.florafauna_hammer.HammerMod;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MultiToolAbilityData;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.HammerAction;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.RightClickAction;
-import net.j40climb.florafauna_hammer.common.item.abilities.multiblock.MultiBlockPatterns;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.CycleMiningModePayload;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.SpawnLightningPayload;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.TeleportToSurfacePayload;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.ThrowItemPayload;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Holder;
-import net.minecraft.core.component.BlockTransformer;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.tags.BlockTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.BlockTransformers;
-import net.minecraft.world.item.context.UseOnContext;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -35,14 +26,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Event handler that intercepts right-click interactions and executes abilities
- * based on data components on the held item.
- *
- * Priority order:
- * 1. Multi-tool modifications (strip/path/till) if MULTI_TOOL_ABILITY component present
- * 2. RIGHT_CLICK_ACTION ability if component present
- */
+/** Airborne Hammers slam. Grounded tools use their selected action or Auto's component fallback. */
 @EventBusSubscriber(modid = HammerMod.MOD_ID)
 public class RightClickActionHandler {
 
@@ -80,35 +64,73 @@ public class RightClickActionHandler {
         }
     }
 
-    /**
-     * Common handler for right-click interactions.
-     * First tries multi-tool modifications, then falls back to RIGHT_CLICK_ACTION ability.
-     *
-     * @param player the player performing the interaction
-     * @param hand the hand used for the interaction
-     * @param clickedPos the position of the clicked block, or null if right-clicking in air
-     * @param hitResult the block hit result, or null if right-clicking in air
-     * @return true if an action was executed and the event should be canceled
-     */
+    //? if <26.3 {
+    @SubscribeEvent
+    public static void onEntityInteractSpecific(PlayerInteractEvent.EntityInteractSpecific event) {
+        if (attemptAirborneSlam(event.getEntity(), event.getHand())) {
+            event.setCancellationResult(InteractionResult.SUCCESS);
+            event.setCanceled(true);
+        }
+    }
+    //?}
+
+    @SubscribeEvent
+    public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
+        if (attemptAirborneSlam(event.getEntity(), event.getHand())) {
+            event.setCancellationResult(InteractionResult.SUCCESS);
+            event.setCanceled(true);
+        }
+    }
+
+    private static boolean attemptAirborneSlam(Player player, InteractionHand hand) {
+        if (player.onGround() || !player.getItemInHand(hand).is(HammerRegistry.HAMMER)) return false;
+        if (player instanceof ServerPlayer serverPlayer) GroundSlam.activate(serverPlayer, hand);
+        return true;
+    }
+
     private static boolean handleRightClick(Player player, InteractionHand hand, @Nullable BlockPos clickedPos, @Nullable BlockHitResult hitResult) {
-        long currentTick = player.level().getGameTime();
+        if (attemptAirborneSlam(player, hand)) return true;
         ItemStack stack = player.getItemInHand(hand);
         HammerAction selected = stack.getOrDefault(HammerRegistry.HAMMER_ACTION, HammerAction.AUTO);
-        if (selected == HammerAction.THROW) {
-            if (!stack.has(HammerRegistry.THROWABLE_ABILITY)) return false;
-            if (player instanceof ServerPlayer serverPlayer) ThrowItemPayload.throwItem(serverPlayer, hand);
-            return true;
+        ServerPlayer serverPlayer = player instanceof ServerPlayer server ? server : null;
+        switch (selected) {
+            case SCAN -> {
+                // HammerItem.useOn runs after the block gets its normal interaction.
+                if (clickedPos != null || !selected.availableOn(stack)) return false;
+                if (serverPlayer != null) SeismicScanner.activate(serverPlayer, hand);
+                return true;
+            }
+            case THROW -> {
+                if (!stack.has(HammerRegistry.THROWABLE_ABILITY)) return false;
+                if (serverPlayer != null) ThrowItemPayload.throwItem(serverPlayer, hand);
+                return true;
+            }
+            case LIGHTNING -> {
+                if (!selected.availableOn(stack)) return false;
+                if (serverPlayer != null) {
+                    BlockPos target = clickedPos != null ? clickedPos : SpawnLightningPayload.targetFromView(player);
+                    SpawnLightningPayload.spawnLightningBolt(serverPlayer, hand, target);
+                }
+                return true;
+            }
+            case TELEPORT -> {
+                if (!selected.availableOn(stack)) return false;
+                if (serverPlayer != null) TeleportToSurfacePayload.teleportToSurface(serverPlayer);
+                return true;
+            }
         }
+
+        long currentTick = player.level().getGameTime();
 
         // Priority 1: Try multi-tool modifications if targeting a block
         if (clickedPos != null && hitResult != null) {
             MultiToolAbilityData multiTool = stack.get(HammerRegistry.MULTI_TOOL_ABILITY);
             if (multiTool != null) {
                 var actions = selected.toolActions(multiTool);
-                if (actions.hasAnyEnabled() && tryToolModification(player, hand, clickedPos, hitResult, actions, selected != HammerAction.AUTO)) {
+                if (actions.hasAnyEnabled() && ToolModifications.apply(player, hand, clickedPos, hitResult, actions, selected != HammerAction.AUTO)) {
                     // Track that we did a tool modification this tick
                     // This prevents RightClickItem from also executing the ability
-                    if (player instanceof ServerPlayer) {
+                    if (serverPlayer != null) {
                         recentToolModifications.put(player.getUUID(), currentTick);
                     }
                     return true;
@@ -116,7 +138,7 @@ public class RightClickActionHandler {
             }
         }
 
-        if (selected != HammerAction.AUTO || !(player instanceof ServerPlayer serverPlayer)) return false;
+        if (selected != HammerAction.AUTO || serverPlayer == null) return false;
 
         // Check if we already did a tool modification this tick
         // (Handles case where RightClickItem fires after RightClickBlock did a tool modification)
@@ -143,11 +165,11 @@ public class RightClickActionHandler {
                 CycleMiningModePayload.cycleMiningMode(serverPlayer, stack);
             }
             case "lightning_ability" -> {
-                if (clickedPos == null || !stack.has(HammerRegistry.LIGHTNING_ABILITY)) return false;
-                SpawnLightningPayload.spawnLightningBolt(player.level(), clickedPos);
+                if (clickedPos == null || !HammerAction.LIGHTNING.availableOn(stack)) return false;
+                SpawnLightningPayload.spawnLightningBolt(serverPlayer, hand, clickedPos);
             }
             case "teleport_surface_ability" -> {
-                if (!stack.has(HammerRegistry.TELEPORT_SURFACE_ABILITY)) return false;
+                if (!HammerAction.TELEPORT.availableOn(stack)) return false;
                 TeleportToSurfacePayload.teleportToSurface(serverPlayer);
             }
             default -> {
@@ -155,67 +177,5 @@ public class RightClickActionHandler {
             }
         }
         return true; // Ability executed, cancel the event
-    }
-
-    /**
-     * Attempts to perform a tool modification (strip/path/till) on blocks based on mining pattern.
-     * Uses the same pattern calculation as multi-block mining.
-     *
-     * @param player the player performing the action
-     * @param hand the hand holding the tool
-     * @param pos the position of the target block
-     * @param hitResult the block hit result
-     * @param multiTool the multi-tool configuration
-     * @return true if any modification was performed
-     */
-    private static boolean tryToolModification(Player player, InteractionHand hand, BlockPos pos, BlockHitResult hitResult, MultiToolAbilityData multiTool, boolean requireTarget) {
-        // Get blocks based on mining pattern (reuses existing pattern logic)
-        var blocksToModify = MultiBlockPatterns.plan(player, player.getItemInHand(hand), pos, hitResult.getDirection()).blocks();
-
-        // Try to modify each block in the pattern
-        boolean anyModified = false;
-        if (requireTarget) {
-            // Explicit actions leave normal block use alone when the target cannot transform.
-            if (!blocksToModify.contains(pos) || !tryModifySingleBlock(player, hand, pos, hitResult, multiTool)) return false;
-            anyModified = true;
-        }
-        for (BlockPos targetPos : blocksToModify) {
-            if (requireTarget && targetPos.equals(pos)) continue;
-            if (tryModifySingleBlock(player, hand, targetPos, hitResult, multiTool)) {
-                anyModified = true;
-            }
-        }
-        return anyModified;
-    }
-
-    /**
-     * Attempts to perform a tool modification on a single block.
-     *
-     * @param player the player performing the action
-     * @param hand the hand holding the tool
-     * @param pos the position of the target block
-     * @param originalHit the original block hit result (used for direction)
-     * @param multiTool the multi-tool configuration
-     * @return true if the block was modified
-     */
-    private static boolean tryModifySingleBlock(Player player, InteractionHand hand, BlockPos pos, BlockHitResult originalHit, MultiToolAbilityData multiTool) {
-        BlockState state = player.level().getBlockState(pos);
-        BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(pos), originalHit.getDirection(), pos, originalHit.isInside());
-        UseOnContext context = new UseOnContext(player, hand, hit);
-
-        // The vanilla axe transformer also scrapes copper. This tool's strip setting is for logs and bamboo.
-        if (multiTool.strip() && (state.is(BlockTags.LOGS) || state.is(BlockTags.BAMBOO_BLOCKS))
-                && transformBlock(context, BlockTransformers.AXE)) {
-            return true;
-        }
-        if (multiTool.flatten() && transformBlock(context, BlockTransformers.SHOVEL)) {
-            return true;
-        }
-        return multiTool.till() && transformBlock(context, BlockTransformers.HOE);
-    }
-
-    private static boolean transformBlock(UseOnContext context, ResourceKey<BlockTransformer> key) {
-        Holder<BlockTransformer> transformer = context.getLevel().registryAccess().getOrThrow(key);
-        return transformer.value().transformBlock(context, transformer).consumesAction();
     }
 }

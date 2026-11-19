@@ -13,6 +13,7 @@ import net.j40climb.florafauna_hammer.common.item.hammer.HammerItem;
 import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.core.Holder;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.TestEnvironmentDefinition;
@@ -105,14 +106,14 @@ final class HammerProgressionGameTests {
         p.setItemInHand(HAND, HammerStage.FORGED.createStack());
         var ore = h.absolutePos(new BlockPos(0, 3, 0));
         p.level().setBlockAndUpdate(ore, Blocks.DIAMOND_ORE.defaultBlockState());
-        p.setPos(ore.north(4).getCenter());
+        p.setPos(Vec3.atCenterOf(ore.north(4)));
         ChargedThrowPayload.key(p, ChargedThrowPayload.PRESS);
         h.runAfterDelay(ChargedThrowPayload.HOLD_TICKS + 1, () -> {
             ChargedThrowPayload.key(p, ChargedThrowPayload.RELEASE);
             var entities = p.level().getEntities(HammerRegistry.THROWN_ITEM.get(), e -> e.getOwner() == p);
             h.assertTrue(entities.size() == 1 && p.getMainHandItem().isEmpty(), "Long T did not transfer exactly one ordinary Forged Hammer");
             var thrown = entities.getFirst();
-            thrown.setPos(ore.north(2).getCenter());
+            thrown.setPos(Vec3.atCenterOf(ore.north(2)));
             thrown.setDeltaMovement(0, 0, 2.5);
             thrown.tick();
             h.assertTrue(thrown.isReturning() && p.level().getBlockState(ore).is(Blocks.DIAMOND_ORE)

@@ -1,19 +1,21 @@
 package net.j40climb.florafauna_hammer.playtest;
 
-import com.mojang.blaze3d.platform.InputConstants;
 import net.j40climb.florafauna_hammer.HammerMod;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MultiToolAbilityData;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.RightClickAction;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningShape;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningSpeed;
-import net.j40climb.florafauna_hammer.common.item.abilities.menu.ToolConfigScreen;
+import net.j40climb.florafauna_hammer.common.item.abilities.menu.HammerMenuScreen;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.UpdateToolConfigPayload;
 import net.j40climb.florafauna_hammer.setup.ClientSetup;
+import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.KeyMapping;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.input.MouseButtonInfo;
 import net.minecraft.resources.Identifier;
@@ -73,25 +75,23 @@ public final class HammerPlaytest {
         t.client("Select the hammer and press its configured menu key", mc -> {
             mc.player.getInventory().setSelectedSlot(0);
             mc.options.setCameraType(CameraType.FIRST_PERSON);
-            if (mc.gui.hud.isHidden()) mc.gui.hud.toggle();
-            KeyMapping.click(ClientSetup.HAMMER_CONFIG_KEY.get().getKey());
+            Playtest.showHud(mc);
         });
-        t.awaitClient("Open the tool configuration screen", mc -> mc.gui.screen() instanceof ToolConfigScreen);
+        openSettings(t);
         t.client("Click the speed control to switch from Efficiency to Instabreak", mc -> {
             clickConfigButton(mc, "speed.efficiency");
-            mc.gui.screen().onClose();
+            releaseWheel(mc);
         });
         t.awaitServer("Receive the speed update on the server", p ->
                 p.getMainHandItem().get(HammerRegistry.TOOL_CONFIG).miningSpeed() == MiningSpeed.INSTABREAK);
         t.awaitClient("Synchronize the server's tool configuration back to the client", mc ->
                 mc.player.getMainHandItem().get(HammerRegistry.TOOL_CONFIG).miningSpeed() == MiningSpeed.INSTABREAK);
-        t.client("Press the menu key again", mc -> KeyMapping.click(ClientSetup.HAMMER_CONFIG_KEY.get().getKey()));
-        t.awaitClient("Reopen the tool configuration screen", mc -> mc.gui.screen() instanceof ToolConfigScreen);
-        t.client("Verify the persisted speed label and press Cycle Mining Mode", mc -> {
+        openSettings(t);
+        t.client("Verify the persisted speed label and release the menu key", mc -> {
             configButton(mc, "speed.instabreak");
-            mc.gui.screen().onClose();
-            KeyMapping.click(ClientSetup.CYCLE_MINING_MODE_KEY.get().getKey());
+            releaseWheel(mc);
         });
+        t.client("Tap the mapped mining key", mc -> KeyMapping.click(ClientSetup.CYCLE_MINING_MODE_KEY.get().getKey()));
         t.awaitServer("Select flat 3×3 mining on the server", p ->
                 p.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING).shape() == MiningShape.FLAT_3X3);
 
@@ -100,7 +100,7 @@ public final class HammerPlaytest {
         setLighting(t, true);
         setLighting(t, false);
         interruptSwing(t);
-        HammerPrecisionPlaytest.steps(t, WALL);
+        HammerSinglePlaytest.steps(t, WALL);
         minePlane(t, WALL, Direction.NORTH, "wall");
         minePlane(t, FLOOR, Direction.UP, "floor");
 
@@ -133,19 +133,18 @@ public final class HammerPlaytest {
                 MultiToolAbilityData.DEFAULT, Blocks.DIRT_PATH.defaultBlockState());
         checkTransform(t, "Till dirt when flattening is disabled", Blocks.DIRT.defaultBlockState(),
                 MultiToolAbilityData.DEFAULT.withFlatten(false), Blocks.FARMLAND.defaultBlockState());
-        HammerActionWheelPlaytest.steps(t, WALL);
+        HammerMenuPlaytest.steps(t, WALL);
         HammerQuarryPlaytest.start(t);
     }
 
     private static void setVeinPreference(Playtest t, boolean exact) {
         String current = exact ? "vein.same_ore" : "vein.exact";
         String next = exact ? "vein.exact" : "vein.same_ore";
-        t.client("Press the menu key to change vein matching", mc -> KeyMapping.click(ClientSetup.HAMMER_CONFIG_KEY.get().getKey()));
-        t.awaitClient("Open the vein matching control", mc -> mc.gui.screen() instanceof ToolConfigScreen);
+        openSettings(t);
         t.client("Click the vein matching control to select " + next, mc -> {
             clickConfigButton(mc, current);
             configButton(mc, next);
-            mc.gui.screen().onClose();
+            releaseWheel(mc);
         });
         t.awaitServer("Save vein matching " + next + " on the held hammer", p ->
                 p.getMainHandItem().get(HammerRegistry.TOOL_CONFIG).exactVein() == exact);
@@ -156,12 +155,11 @@ public final class HammerPlaytest {
     private static void setLighting(Playtest t, boolean enable) {
         String current = enable ? "lighting.off" : "lighting.on";
         String next = enable ? "lighting.on" : "lighting.off";
-        t.client("Press the tool menu key to change auto torches", mc -> KeyMapping.click(ClientSetup.HAMMER_CONFIG_KEY.get().getKey()));
-        t.awaitClient("Open the tunnel lighting control", mc -> mc.gui.screen() instanceof ToolConfigScreen);
+        openSettings(t);
         t.client("Click the auto torches control to select " + next, mc -> {
             clickConfigButton(mc, current);
             configButton(mc, next);
-            mc.gui.screen().onClose();
+            releaseWheel(mc);
         });
         t.awaitServer("Save auto torches " + next + " on the held Hammer", p ->
                 p.getMainHandItem().get(HammerRegistry.TOOL_CONFIG).tunnelLighting() == enable);
@@ -182,17 +180,8 @@ public final class HammerPlaytest {
         for (int x = -1; x <= 1; x++) {
             for (int y = -1; y <= 1; y++) expected.add(WALL.offset(x, y, 0));
         }
-        t.awaitClient("Render cracks at all nine target positions, then hold precision", mc -> {
-            if (!cracks.equals(expected)) return false;
-            ClientSetup.PRECISION_MINING_KEY.get().setDown(true);
-            return true;
-        });
-        t.awaitClient("Hold precision mid-swing and show the center crack alone", mc -> {
-            if (!cracks.equals(Set.of(WALL))) return false;
-            mc.options.keyAttack.setDown(false);
-            ClientSetup.PRECISION_MINING_KEY.get().setDown(false);
-            return true;
-        });
+        t.awaitClient("Render cracks at all nine target positions", mc -> cracks.equals(expected));
+        t.client("Interrupt the swing", mc -> mc.options.keyAttack.setDown(false));
         t.awaitClient("Clear all cracks when the swing is interrupted", mc -> !mc.gameMode.isDestroying() && cracks.isEmpty());
         t.client("Finish observing the interrupted swing", mc -> observingCracks = false);
         t.server("Verify every block survived the interrupted swing", p -> {
@@ -229,10 +218,15 @@ public final class HammerPlaytest {
                 && mc.player.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING).shape() == MiningShape.FLAT_5X5);
     }
 
-    private static void prepare(ServerPlayer player) {
+    static void prepare(ServerPlayer player) {
         ServerLevel level = player.level().getServer().overworld();
         var origin = new BlockPos(-2, 199, -5);
-        var fixture = level.getStructureTemplateManager().get(Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "plots/hammer")).orElseThrow();
+        //? if >=26.3 {
+        /*var plots = level.getStructureTemplateManager();*/
+        //?} else {
+        var plots = level.getStructureManager();
+        //?}
+        var fixture = plots.get(Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "plots/hammer")).orElseThrow();
         var placement = new StructurePlaceSettings().setIgnoreEntities(true);
         placement.setBoundingBox(fixture.getBoundingBox(placement, origin));
         Playtest.require(fixture.placeInWorld(level, origin, origin, placement, level.getRandom(), Block.UPDATE_CLIENTS),
@@ -240,26 +234,55 @@ public final class HammerPlaytest {
         player.setGameMode(GameType.SURVIVAL);
         player.removeAllEffects();
         player.getInventory().clearContent();
-        player.getInventory().setItem(0, new ItemStack(HammerRegistry.HAMMER.get()));
+        player.getInventory().setItem(0, HammerStage.TEMPEST.createStack());
         player.getInventory().setSelectedSlot(0);
         player.teleportTo(level, 0.5, 201, 0.5, Set.of(), 0f, 0f, true);
         player.inventoryMenu.broadcastChanges();
     }
 
+    static void openMenu(Playtest t) {
+        t.client("Hold the mapped Hammer control to open both wheels", mc -> {
+            var key = ClientSetup.CYCLE_MINING_MODE_KEY.get().getKey();
+            KeyMapping.set(key, true);
+            KeyMapping.click(key);
+        });
+        t.awaitClient("Show both Hammer wheels", mc -> Playtest.screen(mc) instanceof HammerMenuScreen);
+    }
+
+    static void releaseWheel(Minecraft mc) {
+        var mapped = ClientSetup.CYCLE_MINING_MODE_KEY.get().getKey();
+        Playtest.require(Playtest.screen(mc) instanceof HammerMenuScreen, "Hammer wheel closed before releasing the bound key");
+        // A screen receives the physical key-up even when opening it cleared the game's key mappings.
+        Playtest.require(Playtest.screen(mc).keyReleased(new KeyEvent(mapped.getValue(), 0, 0)), "Wheel ignored the mapped release");
+        Playtest.require(Playtest.screen(mc) == null, "Mapped release left the wheel open");
+    }
+
+    private static void openSettings(Playtest t) {
+        openMenu(t);
+        t.client("Open Settings from the right wheel", mc -> HammerRadialPlaytest.select(mc, "settings"));
+    }
+
     private static void clickConfigButton(Minecraft mc, String setting) {
-        Button button = configButton(mc, setting);
+        click(mc, configButton(mc, setting));
+    }
+
+    static void click(Minecraft mc, Button button) {
         var click = new MouseButtonEvent(button.getX() + button.getWidth() / 2.0,
                 button.getY() + button.getHeight() / 2.0, new MouseButtonInfo(InputConstants.MOUSE_BUTTON_LEFT, 0));
-        Playtest.require(mc.gui.screen().mouseClicked(click, false), "Button click was ignored: " + setting);
-        mc.gui.screen().mouseReleased(click);
+        Playtest.require(Playtest.screen(mc).mouseClicked(click, false), "Ignored button " + button.getMessage().getString());
+        if (Playtest.screen(mc) != null) Playtest.screen(mc).mouseReleased(click);
     }
 
     private static Button configButton(Minecraft mc, String setting) {
-        String expected = Component.translatable("gui.florafauna.tool_config." + setting).getString();
-        return mc.gui.screen().children().stream()
+        return button(mc, Component.translatable("gui.florafauna.tool_config." + setting));
+    }
+
+    static Button button(Minecraft mc, Component label) {
+        String expected = label.getString();
+        return Playtest.screen(mc).children().stream()
                 .filter(Button.class::isInstance).map(Button.class::cast)
                 .filter(button -> button.getMessage().getString().equals(expected))
-                .findFirst().orElseThrow(() -> new AssertionError("Missing config button: " + expected));
+                .findFirst().orElseThrow(() -> new AssertionError("Missing Hammer menu choice: " + expected));
     }
 
     private static boolean aimedAt(Minecraft mc, BlockPos center, Direction face) {

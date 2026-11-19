@@ -21,7 +21,11 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ParticleStatus;
 import net.minecraft.world.InteractionHand;
+//? if >=26.3 {
+/*import net.minecraft.world.entity.EntityTypes;*/
+//?} else {
 import net.minecraft.world.entity.EntityType;
+//?}
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.ItemStack;
@@ -93,7 +97,7 @@ final class HammerProgressionPlaytest {
         String stem = stage.getSerializedName();
         t.client("Inspect " + stage + " in first person", mc -> {
             mc.options.setCameraType(CameraType.FIRST_PERSON);
-            mc.options.hideGui = false;
+            Playtest.showHud(mc);
             mc.player.setXRot(0);
             mc.player.setYRot(0);
         });
@@ -113,7 +117,7 @@ final class HammerProgressionPlaytest {
         t.screenshot(stem + "-third-front");
         t.client("Inspect the inventory slot", mc -> {
             mc.options.setCameraType(CameraType.FIRST_PERSON);
-            mc.setScreen(new InventoryScreen(mc.player));
+            Playtest.setScreen(mc, new InventoryScreen(mc.player));
         });
         t.screenshot(stem + "-inventory");
         t.client("Close inventory", mc -> mc.player.closeContainer());
@@ -127,7 +131,11 @@ final class HammerProgressionPlaytest {
             Playtest.require(five.active == advanced && scan.active == advanced && lightning.active == late, "Incorrect " + stage + " wheel locks");
             var hovered = advanced ? lightning : five;
             pointAt(mc, hovered.getX() + hovered.getWidth() / 2.0, hovered.getY() + hovered.getHeight() / 2.0);
+            //? if >=26.3 {
+            /*mc.gui.toastManager().clear();*/
+            //?} else {
             mc.getToastManager().clear();
+            //?}
         });
         t.screenshot(stem + "-wheels");
         t.client("Release the wheel", HammerPlaytest::releaseWheel);
@@ -137,9 +145,17 @@ final class HammerProgressionPlaytest {
         t.client("Start mining " + stage, mc -> {
             var hit = (BlockHitResult) mc.hitResult;
             Playtest.require(mc.gameMode.startDestroyBlock(TARGET, hit.getDirection()), "Client refused the mining swing");
+            //? if >=26.3 {
+            /*mc.player.swing(InteractionHand.MAIN_HAND, mc.player.getMainHandItem().getAttackAnimation(), false);*/
+            //?} else {
             mc.player.swing(InteractionHand.MAIN_HAND);
+            //?}
         });
+        //? if >=26.3 {
+        /*t.awaitClient("Observe a mining swing with the equipped Hammer", mc -> mc.player.isSwinging());*/
+        //?} else {
         t.awaitClient("Observe a mining swing with the equipped Hammer", mc -> mc.player.swinging);
+        //?}
         t.screenshot(stem + "-mining-first");
         t.client("Stop mining", mc -> mc.gameMode.stopDestroyBlock());
 
@@ -174,15 +190,20 @@ final class HammerProgressionPlaytest {
     /** Deliver a client-local mouse event. Screen rendering reads MouseHandler coordinates each frame. */
     private static void pointAt(Minecraft mc, double guiX, double guiY) {
         var window = mc.getWindow();
+        double x = guiX * window.getScreenWidth() / window.getGuiScaledWidth();
+        double y = guiY * window.getScreenHeight() / window.getGuiScaledHeight();
+        //? if >=26.3 {
+        /*mc.mouseHandler.onMove(window.handle(), x, y, 0, 0);*/
+        //?} else {
         try {
             var move = MouseHandler.class.getDeclaredMethod("onMove", long.class, double.class, double.class);
             move.setAccessible(true);
-            move.invoke(mc.mouseHandler, window.handle(), guiX * window.getScreenWidth() / window.getGuiScaledWidth(),
-                    guiY * window.getScreenHeight() / window.getGuiScaledHeight());
+            move.invoke(mc.mouseHandler, window.handle(), x, y);
         } catch (ReflectiveOperationException e) {
             throw new AssertionError("Cannot dispatch the playtest mouse movement", e);
         }
-        mc.screen.mouseMoved(guiX, guiY);
+        //?}
+        Playtest.screen(mc).mouseMoved(guiX, guiY);
     }
 
     private static void waitTicks(Playtest t, int ticks) {
@@ -233,7 +254,11 @@ final class HammerProgressionPlaytest {
             var mode = tool.get(HammerRegistry.MULTI_BLOCK_MINING);
             if (mode.shape() != MiningShape.FLAT_3X3) return false;
             Playtest.require(tool.get(HammerRegistry.HAMMER_ACTION) == HammerAction.STRIP && p.blockPosition().equals(feet)
+                    //? if >=26.3 {
+                    /*&& p.level().getEntities(EntityTypes.LIGHTNING_BOLT, bolt -> bolt.distanceToSqr(p) < 144).isEmpty(),*/
+                    //?} else {
                     && p.level().getEntities(EntityType.LIGHTNING_BOLT, bolt -> bolt.distanceToSqr(p) < 144).isEmpty(),
+                    //?}
                     "A locked ability was selected or activated");
             p.level().setBlockAndUpdate(feet.above(4), Blocks.AIR.defaultBlockState());
             return true;

@@ -13,6 +13,7 @@ import net.j40climb.florafauna_hammer.common.item.hammer.HammerItem;
 import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.core.Holder;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.TestEnvironmentDefinition;
@@ -38,6 +39,9 @@ import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.j40climb.florafauna_hammer.common.item.projectile.ThrownItemEntity;
 import net.neoforged.neoforge.event.level.BlockEvent;
+//? if >=26.3 {
+/*import net.neoforged.neoforge.event.level.block.BreakBlockEvent;*/
+//?}
 
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -102,13 +106,21 @@ final class ChargedHammerGameTests {
         rock(p, center.west(), Blocks.DIAMOND_ORE);
         var held = new ItemStack(Items.STONE);
         p.setItemInHand(InteractionHand.MAIN_HAND, held);
+        //? if >=26.3 {
+        /*Consumer<BreakBlockEvent> reject = event -> {*/
+        //?} else {
         Consumer<BlockEvent.BreakEvent> reject = event -> {
+        //?}
             if (event.getPlayer() == p) {
                 h.assertTrue(event.getPlayer().getMainHandItem() == hammer, "Break hook saw the wrong tool");
                 event.setCanceled(true);
             }
         };
+        //? if >=26.3 {
+        /*NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, BreakBlockEvent.class, reject);*/
+        //?} else {
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, BlockEvent.BreakEvent.class, reject);
+        //?}
         try {
             RemoteOreStrike.hit(p, hammer, center);
         } finally {
@@ -119,10 +131,18 @@ final class ChargedHammerGameTests {
         // A denied neighbor must leave charge available for another target.
         hammer.set(HammerRegistry.HAMMER_CHARGE, 2);
         rock(p, center.east(2), Blocks.DIAMOND_ORE);
+        //? if >=26.3 {
+        /*Consumer<BreakBlockEvent> rejectWest = event -> {*/
+        //?} else {
         Consumer<BlockEvent.BreakEvent> rejectWest = event -> {
+        //?}
             if (event.getPlayer() == p && event.getPos().equals(center.west())) event.setCanceled(true);
         };
+        //? if >=26.3 {
+        /*NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, BreakBlockEvent.class, rejectWest);*/
+        //?} else {
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, BlockEvent.BreakEvent.class, rejectWest);
+        //?}
         try {
             RemoteOreStrike.hit(p, hammer, center);
         } finally {
@@ -140,7 +160,7 @@ final class ChargedHammerGameTests {
         var center = h.absolutePos(new BlockPos(8, 12, 8));
         rock(p, center, Blocks.DIAMOND_ORE);
         rock(p, center.east(), Blocks.DIAMOND_ORE);
-        p.setPos(center.north(4).getCenter());
+        p.setPos(Vec3.atCenterOf(center.north(4)));
         ChargedThrowPayload.key(p, ChargedThrowPayload.PRESS);
         h.runAfterDelay(ChargedThrowPayload.HOLD_TICKS + 1, () -> {
             ChargedThrowPayload.key(p, ChargedThrowPayload.RELEASE);
@@ -154,7 +174,7 @@ final class ChargedHammerGameTests {
             var restored = HammerRegistry.THROWN_ITEM.get().create(p.level(), EntitySpawnReason.LOAD);
             restored.load(TagValueInput.create(ProblemReporter.DISCARDING, p.level().registryAccess(), save.buildResult()));
             restored.setOwner(p);
-            restored.setPos(center.north(2).getCenter());
+            restored.setPos(Vec3.atCenterOf(center.north(2)));
             restored.setDeltaMovement(0, 0, 2.5);
             var held = new ItemStack(Items.STICK, 4);
             p.setItemInHand(InteractionHand.MAIN_HAND, held);
@@ -181,7 +201,7 @@ final class ChargedHammerGameTests {
         var center = h.absolutePos(new BlockPos(8, 12, 8));
         rock(p, center, Blocks.STONE);
         rock(p, center.south(), Blocks.DIAMOND_ORE);
-        p.setPos(center.north(4).getCenter());
+        p.setPos(Vec3.atCenterOf(center.north(4)));
         var original = p.getMainHandItem();
         ChargedThrowPayload.key(p, ChargedThrowPayload.PRESS);
         h.runAfterDelay(ChargedThrowPayload.HOLD_TICKS + 1, () -> {
@@ -200,7 +220,7 @@ final class ChargedHammerGameTests {
             h.runAfterDelay(ChargedThrowPayload.HOLD_TICKS + 1, () -> {
                 ChargedThrowPayload.key(p, ChargedThrowPayload.RELEASE);
                 var thrown = p.level().getEntities(HammerRegistry.THROWN_ITEM.get(), e -> e.getOwner() == p).getFirst();
-                thrown.setPos(center.north(2).getCenter());
+                thrown.setPos(Vec3.atCenterOf(center.north(2)));
                 thrown.setDeltaMovement(0, 0, 3.5);
                 thrown.tick();
                 h.assertTrue(thrown.isReturning() && HammerItem.charge(thrown.getThrownItem()) == 64
@@ -215,7 +235,7 @@ final class ChargedHammerGameTests {
         var p = player(h, false);
         var center = h.absolutePos(new BlockPos(8, 12, 8));
         rock(p, center, Blocks.DIAMOND_ORE);
-        p.setPos(center.north(4).getCenter());
+        p.setPos(Vec3.atCenterOf(center.north(4)));
         var hammer = p.getMainHandItem();
         hammer.set(HammerRegistry.HAMMER_CHARGE, 40);
         for (int tick = 1; tick <= 20; tick++) {
@@ -232,7 +252,7 @@ final class ChargedHammerGameTests {
         ChargedThrowPayload.key(p, ChargedThrowPayload.PRESS);
         ChargedThrowPayload.key(p, ChargedThrowPayload.RELEASE);
         var thrown = p.level().getEntities(HammerRegistry.THROWN_ITEM.get(), e -> e.getOwner() == p).getFirst();
-        thrown.setPos(center.north(2).getCenter());
+        thrown.setPos(Vec3.atCenterOf(center.north(2)));
         thrown.setDeltaMovement(0, 0, 2.5);
         thrown.tick();
         h.assertTrue(!p.level().isEmptyBlock(center) && HammerItem.charge(thrown.getThrownItem()) == 41, "A tap must be a normal throw");

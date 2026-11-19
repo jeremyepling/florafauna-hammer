@@ -57,7 +57,7 @@ public final class Playtest {
         this.phase = phase;
         awaitClient("Join the copied world", mc -> {
             handleCopyUpgradePrompt(mc);
-            if (mc.player == null || mc.level == null || mc.getSingleplayerServer() == null || mc.gui.screen() != null) return false;
+            if (mc.player == null || mc.level == null || mc.getSingleplayerServer() == null || Playtest.screen(mc) != null) return false;
             try {
                 Path expected = directory.resolve("saves/playtest").toRealPath();
                 verifyCopyDirectory(mc);
@@ -70,13 +70,16 @@ public final class Playtest {
         // The server ignores interaction packets until the client acknowledges the level load.
         awaitServer("Wait for the server to accept player input", player -> player.connection.hasClientLoaded());
         if ("stair-outline".equals(scenario)) HammerStairOutlinePlaytest.steps(this);
+        else if ("progression".equals(scenario)) HammerProgressionPlaytest.steps(this, phase);
+        else if ("radial".equals(scenario)) HammerRadialPlaytest.steps(this);
+        else if ("powers".equals(scenario)) HammerPowerPlaytest.steps(this);
         else HammerPlaytest.steps(this, phase);
         deadline = System.nanoTime() + Duration.ofSeconds(90).toNanos();
     }
 
     /** Follow vanilla's backup and file migration only for the runner's disposable copy. */
     private void handleCopyUpgradePrompt(Minecraft mc) {
-        Screen screen = mc.gui.screen();
+        Screen screen = Playtest.screen(mc);
         if (screen == null || screen == lastUpgradePrompt) return;
         Component label;
         if (screen instanceof BackupConfirmScreen && (screen.getTitle().equals(Component.translatable("selectWorld.backupQuestion.file_fixing_required"))
@@ -108,6 +111,38 @@ public final class Playtest {
         }
     }
 
+    static void setScreen(Minecraft mc, Screen screen) {
+        //? if >=26.3 {
+        /*mc.gui.setScreen(screen);*/
+        //?} else {
+        mc.setScreen(screen);
+        //?}
+    }
+
+    private static com.mojang.blaze3d.pipeline.RenderTarget mainRenderTarget(Minecraft mc) {
+        //? if >=26.3 {
+        /*return mc.gameRenderer.mainRenderTarget();*/
+        //?} else {
+        return mc.getMainRenderTarget();
+        //?}
+    }
+
+    static Screen screen(Minecraft mc) {
+        //? if >=26.3 {
+        /*return mc.gui.screen();*/
+        //?} else {
+        return mc.screen;
+        //?}
+    }
+
+    static void showHud(Minecraft mc) {
+        //? if >=26.3 {
+        /*if (mc.gui.hud.isHidden()) mc.gui.hud.toggle();*/
+        //?} else {
+        mc.options.hideGui = false;
+        //?}
+    }
+
     void client(String name, Consumer<Minecraft> action) {
         awaitClient(name, mc -> { action.accept(mc); return true; });
     }
@@ -119,7 +154,7 @@ public final class Playtest {
     void screenshot(String stem) {
         String filename = stem + ".png";
         client("Capture " + filename, mc ->
-                Screenshot.grab(mc.gameDirectory, filename, mc.gameRenderer.mainRenderTarget(), 1, ignored -> {}));
+                Screenshot.grab(mc.gameDirectory, filename, mainRenderTarget(mc), 1, ignored -> {}));
         awaitClient("Write " + filename, mc ->
                 Files.isRegularFile(directory.resolve("screenshots").resolve(filename)));
     }
@@ -163,9 +198,9 @@ public final class Playtest {
                 finish(mc, "PASS");
                 return;
             }
-            if (mc.gui.screen() instanceof PauseScreen) mc.gui.setScreen(null);
+            if (Playtest.screen(mc) instanceof PauseScreen) setScreen(mc, null);
             if (System.nanoTime() > deadline) {
-                Screen screen = mc.gui.screen();
+                Screen screen = Playtest.screen(mc);
                 throw new AssertionError("Timed out; screen=" + (screen == null ? "none"
                         : screen.getClass().getSimpleName() + " (" + screen.getTitle().getString() + ")"));
             }

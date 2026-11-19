@@ -9,6 +9,7 @@ import net.j40climb.florafauna_hammer.common.item.abilities.data.ToolConfig;
 import net.j40climb.florafauna_hammer.common.item.abilities.multiblock.LavaExposure;
 import net.j40climb.florafauna_hammer.common.item.abilities.multiblock.MultiBlockPatterns;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.UpdateToolConfigPayload;
+import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -22,7 +23,6 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.item.Items;
@@ -40,7 +40,9 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.util.FakePlayer;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
-import net.neoforged.neoforge.event.level.block.BreakBlockEvent;
+//? if >=26.3 {
+/*import net.neoforged.neoforge.event.level.block.BreakBlockEvent;*/
+//?}
 
 import java.util.HashMap;
 import java.util.List;
@@ -68,7 +70,7 @@ final class HammerMiningGameTests {
         HammerGameTests.registerStructureTest(event, env, "hammer_stair_canceled_placement", MINE, 100, HammerMiningGameTests::stairCanceledPlacement);
         HammerGameTests.registerStructureTest(event, env, "hammer_lava_exposure", MINE, 100, HammerMiningGameTests::lavaExposure);
         HammerGameTests.registerStructureTest(event, env, "hammer_dimension_floor", MINE, 100, HammerMiningGameTests::buildFloor);
-        HammerGameTests.registerStructureTest(event, env, "hammer_precision_is_per_player", MINE, 100, HammerMiningGameTests::precision);
+        HammerGameTests.registerStructureTest(event, env, "hammer_single_is_per_tool", MINE, 100, HammerMiningGameTests::perToolMode);
         HammerGameTests.registerStructureTest(event, env, "hammer_permission_and_tool_rules", MINE, 100, HammerMiningGameTests::eligibility);
     }
 
@@ -91,34 +93,33 @@ final class HammerMiningGameTests {
                 new LavaExposure(center.east(5), Direction.UP), new LavaExposure(center.east(6), Direction.EAST));
         var plan = MultiBlockPatterns.plan(player, player.getMainHandItem(), center, Direction.WEST);
         h.assertTrue(Set.copyOf(LavaExposure.find(player.level(), plan)).equals(expected), "Wrong exposed faces along the bore");
-        player.setData(HammerRegistry.PRECISION_MINING, true);
+        configure(player, MiningShape.SINGLE);
         var precise = MultiBlockPatterns.plan(player, player.getMainHandItem(), center, Direction.WEST);
         h.assertTrue(LavaExposure.find(player.level(), precise).equals(List.of(new LavaExposure(center, Direction.DOWN))),
-                "Precision preview marked lava outside the single block");
+                "Single preview marked lava outside the single block");
         check(h, center.east(6), Blocks.STONE, "Preview changed the wall");
-        player.setData(HammerRegistry.PRECISION_MINING, false);
+        configure(player, MiningShape.BORE);
         swing(player, center, Direction.WEST, Direction.EAST);
         check(h, center.east(6), Blocks.AIR, "Lava warning blocked the cut");
         check(h, center.east(7), Blocks.LAVA, "Lava warning consumed lava");
         h.succeed();
     }
 
-    private static void precision(GameTestHelper h) {
-        var precise = player(h, MiningShape.TUNNEL_DOWN);
+    private static void perToolMode(GameTestHelper h) {
+        var precise = player(h, MiningShape.SINGLE);
         var other = player(h, MiningShape.TUNNEL_DOWN);
         var center = h.absolutePos(new BlockPos(11, 14, 11));
         var originalMode = precise.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING);
-        precise.setData(HammerRegistry.PRECISION_MINING, true);
         fill(precise, center.offset(0, -6, -4), center.above(2), Blocks.STONE);
         swing(precise, center, Direction.SOUTH, Direction.NORTH);
-        check(h, center, Blocks.AIR, "Precision break");
-        check(h, center.below(2), Blocks.STONE, "Precision placed an unwanted stair");
-        check(h, center.north(), Blocks.STONE, "Precision mined a neighbor");
+        check(h, center, Blocks.AIR, "Single break");
+        check(h, center.below(2), Blocks.STONE, "Single placed an unwanted stair");
+        check(h, center.north(), Blocks.STONE, "Single mined a neighbor");
         set(precise, center, Blocks.STONE);
         swing(other, center, Direction.SOUTH, Direction.NORTH);
         stair(h, center.below(2), Direction.SOUTH);
         h.assertTrue(originalMode.equals(precise.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING)),
-                "Temporary precision rewrote the held tool");
+                "Another player rewrote the selected Single mode");
         h.succeed();
     }
 
@@ -343,7 +344,11 @@ final class HammerMiningGameTests {
         check(h, center.east(2), Blocks.IRON_ORE, "mixed vein respects two-block cap");
 
         configure(player, MiningShape.SHAPELESS);
-        for (var entry : Map.of(Blocks.NETHER_GOLD_ORE, Blocks.GOLD_ORE, Blocks.WOOL.pick(DyeColor.WHITE), Blocks.WOOL.pick(DyeColor.BLACK)).entrySet()) {
+        //? if >=26.3 {
+        /*for (var entry : Map.of(Blocks.NETHER_GOLD_ORE, Blocks.GOLD_ORE, Blocks.WOOL.white(), Blocks.WOOL.black()).entrySet()) {*/
+        //?} else {
+        for (var entry : Map.of(Blocks.NETHER_GOLD_ORE, Blocks.GOLD_ORE, Blocks.WHITE_WOOL, Blocks.BLACK_WOOL).entrySet()) {
+        //?}
             set(player, center, entry.getKey());
             set(player, center.west(), entry.getKey());
             set(player, center.east(), entry.getValue());
@@ -506,10 +511,18 @@ final class HammerMiningGameTests {
         var player = player(h, MiningShape.FLAT_3X3);
         var center = h.absolutePos(new BlockPos(8, 12, 8));
         fill(player, center.offset(-1, -1, -1), center.offset(1, 1, 1), Blocks.STONE);
-        Consumer<BreakBlockEvent> cancel = event -> {
+        //? if >=26.3 {
+        /*Consumer<BreakBlockEvent> cancel = event -> {*/
+        //?} else {
+        Consumer<BlockEvent.BreakEvent> cancel = event -> {
+        //?}
             if (event.getPlayer() == player && event.getPos().equals(center)) event.setCanceled(true);
         };
-        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, BreakBlockEvent.class, cancel);
+        //? if >=26.3 {
+        /*NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, BreakBlockEvent.class, cancel);*/
+        //?} else {
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, BlockEvent.BreakEvent.class, cancel);
+        //?}
         try {
             swing(player, center, Direction.UP, Direction.NORTH);
         } finally {
@@ -520,10 +533,18 @@ final class HammerMiningGameTests {
         }
 
         var protectedPos = center.west();
-        Consumer<BreakBlockEvent> protect = event -> {
+        //? if >=26.3 {
+        /*Consumer<BreakBlockEvent> protect = event -> {*/
+        //?} else {
+        Consumer<BlockEvent.BreakEvent> protect = event -> {
+        //?}
             if (event.getPlayer() == player && event.getPos().equals(protectedPos)) event.setCanceled(true);
         };
-        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, BreakBlockEvent.class, protect);
+        //? if >=26.3 {
+        /*NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, BreakBlockEvent.class, protect);*/
+        //?} else {
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, BlockEvent.BreakEvent.class, protect);
+        //?}
         var border = player.level().getWorldBorder();
         double x = border.getCenterX(), z = border.getCenterZ(), size = border.getSize();
         try {
@@ -560,7 +581,7 @@ final class HammerMiningGameTests {
     static ServerPlayer player(GameTestHelper h, MiningShape mode) {
         var player = new FakePlayer(h.getLevel(), new GameProfile(UUID.randomUUID(), "mining-test"));
         player.setGameMode(GameType.CREATIVE);
-        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(HammerRegistry.HAMMER.get()));
+        player.setItemInHand(InteractionHand.MAIN_HAND, HammerStage.TEMPEST.createStack());
         configure(player, mode);
         return player;
     }

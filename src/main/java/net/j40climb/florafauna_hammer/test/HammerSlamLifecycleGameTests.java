@@ -12,7 +12,11 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
+//? if >=26.3 {
+/*import net.minecraft.world.entity.EntityTypes;*/
+//?} else {
 import net.minecraft.world.entity.EntityType;
+//?}
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -79,7 +83,11 @@ final class HammerSlamLifecycleGameTests {
             rider.getAbilities().flying = false;
             rider.setPos(climber.position());
             rider.setOnGround(false);
+            //? if >=26.3 {
+            /*var pig = h.spawn(EntityTypes.PIG, new BlockPos(8, 11, 8));*/
+            //?} else {
             var pig = h.spawn(EntityType.PIG, new BlockPos(8, 11, 8));
+            //?}
             h.assertTrue(rider.startRiding(pig, true, false) && rider.isPassenger(), "Failed to mount the rider");
             h.assertTrue(!GroundSlam.activate(rider, HAND) && HammerItem.charge(rider.getMainHandItem()) == HammerStage.TEMPEST.capacity(),
                     "Riding consumed Hammer charge");
@@ -104,14 +112,22 @@ final class HammerSlamLifecycleGameTests {
         var longFall = NeoForge.EVENT_BUS.post(new LivingFallEvent(attacker, 40, 1));
         h.assertTrue(shortFall.getDistance() == 0 && longFall.getDistance() > 30, "Fall cushion lost short/high fall distinction");
         var witness = HammerPowerGameTests.airborne(h);
+        //? if >=26.3 {
+        /*witness.setPermanentlyInvulnerable(false);*/
+        //?} else {
         witness.setInvulnerable(false);
+        //?}
         var floor = h.absolutePos(new BlockPos(8, 8, 8));
         witness.setPos(Vec3.atBottomCenterOf(floor.above().east()));
         h.getLevel().addNewPlayer(witness);
         try {
             h.assertTrue(h.getLevel().getEntitiesOfClass(ServerPlayer.class, witness.getBoundingBox()).contains(witness),
                     "Second player must be present in the impact area");
+            //? if >=26.3 {
+            /*var hostile = h.spawn(EntityTypes.HUSK, new BlockPos(8, 9, 7));*/
+            //?} else {
             var hostile = h.spawn(EntityType.HUSK, new BlockPos(8, 9, 7));
+            //?}
             float enemyHealth = hostile.getHealth(), witnessHealth = witness.getHealth();
             var witnessMotion = witness.getDeltaMovement();
             attacker.setPos(Vec3.atBottomCenterOf(floor.above()));

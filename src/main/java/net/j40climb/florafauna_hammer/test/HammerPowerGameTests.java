@@ -20,7 +20,11 @@ import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+//? if >=26.3 {
+/*import net.minecraft.world.entity.EntityTypes;*/
+//?} else {
 import net.minecraft.world.entity.EntityType;
+//?}
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
@@ -71,10 +75,14 @@ final class HammerPowerGameTests {
             player.setItemInHand(HAND, HammerStage.TEMPEST.createStack());
             var target = origin.east(2);
             player.getMainHandItem().set(HammerRegistry.HAMMER_ACTION, HammerAction.LIGHTNING);
-            var hit = new BlockHitResult(target.getCenter(), Direction.UP, target, false);
+            var hit = new BlockHitResult(Vec3.atCenterOf(target), Direction.UP, target, false);
             var click = new PlayerInteractEvent.RightClickBlock(player, HAND, target, hit);
             RightClickActionHandler.onRightClickBlock(click);
+            //? if >=26.3 {
+            /*var bolts = h.getLevel().getEntities(EntityTypes.LIGHTNING_BOLT, bolt -> bolt.blockPosition().equals(target));*/
+            //?} else {
             var bolts = h.getLevel().getEntities(EntityType.LIGHTNING_BOLT, bolt -> bolt.blockPosition().equals(target));
+            //?}
             h.assertTrue(click.isCanceled() && bolts.size() == 1, "Lightning did not strike the selected target");
             bolts.getFirst().discard();
             var roof = origin.above(3);
@@ -95,11 +103,23 @@ final class HammerPowerGameTests {
         var player = airborne(h);
         var floor = h.absolutePos(FLOOR);
         var hammer = player.getMainHandItem();
+        //? if >=26.3 {
+        /*var near = h.spawn(EntityTypes.HUSK, FLOOR.above().east());*/
+        //?} else {
         var near = h.spawn(EntityType.HUSK, FLOOR.above().east());
+        //?}
+        //? if >=26.3 {
+        /*var far = h.spawn(EntityTypes.HUSK, FLOOR.above().east(3));*/
+        //?} else {
         var far = h.spawn(EntityType.HUSK, FLOOR.above().east(3));
+        //?}
+        //? if >=26.3 {
+        /*var cow = h.spawn(EntityTypes.COW, FLOOR.above().north());*/
+        //?} else {
         var cow = h.spawn(EntityType.COW, FLOOR.above().north());
+        //?}
         float health = near.getHealth(), friendlyHealth = cow.getHealth(), selfHealth = player.getHealth();
-        var hit = new BlockHitResult(floor.getCenter(), Direction.UP, floor, false);
+        var hit = new BlockHitResult(Vec3.atCenterOf(floor), Direction.UP, floor, false);
         var click = new PlayerInteractEvent.RightClickBlock(player, HAND, floor, hit);
         RightClickActionHandler.onRightClickBlock(click);
         h.assertTrue(click.isCanceled() && player.getMainHandItem() == hammer && HammerItem.charge(hammer) == 84
@@ -114,7 +134,11 @@ final class HammerPowerGameTests {
                 && far.getDeltaMovement().horizontalDistance() > 0, "Knockback did not decrease with distance");
         h.assertTrue(cow.getHealth() == friendlyHealth && player.getHealth() == selfHealth
                 && h.getLevel().getBlockState(floor).is(Blocks.STONE), "Impact affected a friendly target or destroyed terrain");
+        //? if >=26.3 {
+        /*near.setInvulnerableTime(0);*/
+        //?} else {
         near.invulnerableTime = 0;
+        //?}
         float after = near.getHealth();
         GroundSlam.tick(new PlayerTickEvent.Post(player));
         h.assertTrue(after == near.getHealth() && !player.hasData(HammerRegistry.PENDING_SLAM), "Impact fired twice");

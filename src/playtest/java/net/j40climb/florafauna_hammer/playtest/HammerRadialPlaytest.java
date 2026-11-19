@@ -12,7 +12,7 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.input.MouseButtonInfo;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 final class HammerRadialPlaytest {
     private static final String MENU = "gui.florafauna.hammer_menu.";
@@ -23,8 +23,8 @@ final class HammerRadialPlaytest {
         HammerPlaytest.openMenu(t);
         t.client("Verify ten mining choices on the left and eight abilities on the right", HammerRadialPlaytest::checkBothWheels);
         t.client("Releasing the default C key leaves the remapped V hold active", mc -> {
-            mc.screen.keyReleased(new KeyEvent(GLFW.GLFW_KEY_C, 0, 0));
-            Playtest.require(mc.screen instanceof HammerMenuScreen, "Unbound C closed the wheels");
+            Playtest.screen(mc).keyReleased(new KeyEvent(InputConstants.KEY_C, 0, 0));
+            Playtest.require(Playtest.screen(mc) instanceof HammerMenuScreen, "Unbound C closed the wheels");
         });
         t.screenshot("hammer-wheels");
         t.client("Select Walkable with an off-label click in the left wheel", mc -> {
@@ -69,14 +69,14 @@ final class HammerRadialPlaytest {
         t.awaitServer("Persist Walkable as the mining shape", p ->
                 p.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING).shape() == MiningShape.WALKABLE_TUNNEL);
         t.client("Move keyboard focus clockwise and favorite the focused Large wedge", mc -> {
-            key(mc, GLFW.GLFW_KEY_RIGHT);
-            key(mc, GLFW.GLFW_KEY_F);
+            key(mc, InputConstants.KEY_RIGHT);
+            key(mc, InputConstants.KEY_F);
         });
         t.awaitServer("F favorites Large without switching the selected shape", p -> {
             var mode = p.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING);
             return mode.shape() == MiningShape.WALKABLE_TUNNEL && mode.isFavorite(MiningShape.LARGE_TUNNEL);
         });
-        t.client("Apply the focused Large wedge with Enter", mc -> key(mc, GLFW.GLFW_KEY_ENTER));
+        t.client("Apply the focused Large wedge with Enter", mc -> key(mc, InputConstants.KEY_RETURN));
         t.awaitServer("Persist Large Tunnel from the keyboard", p ->
                 p.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING).shape() == MiningShape.LARGE_TUNNEL);
         t.screenshot("hammer-wheels-selected");
@@ -92,7 +92,7 @@ final class HammerRadialPlaytest {
                     && tool.get(HammerRegistry.MULTI_BLOCK_MINING).shape() == MiningShape.BORE;
         });
         t.client("Backspace restores the eight right-hand abilities", mc -> {
-            key(mc, GLFW.GLFW_KEY_BACKSPACE);
+            key(mc, InputConstants.KEY_BACKSPACE);
             checkBothWheels(mc);
         });
         t.client("Resize the disposable client to 680 by 480 at GUI scale two", mc -> {
@@ -100,8 +100,8 @@ final class HammerRadialPlaytest {
             mc.getWindow().setWindowed(680, 480);
             mc.resizeGui();
         });
-        t.awaitClient("Lay out both wheels on a narrow screen", mc -> mc.screen instanceof HammerMenuScreen
-                && mc.screen.width <= 350 && mc.screen.height >= 240);
+        t.awaitClient("Lay out both wheels on a narrow screen", mc -> Playtest.screen(mc) instanceof HammerMenuScreen
+                && Playtest.screen(mc).width <= 350 && Playtest.screen(mc).height >= 240);
         t.client("Keep all choices on their own side in the narrow layout", HammerRadialPlaytest::checkBothWheels);
         t.screenshot("hammer-wheels-narrow");
         t.client("Select Throw at narrow width", mc -> HammerPlaytest.click(mc, HammerPlaytest.button(mc, actionLabel(HammerAction.THROW))));
@@ -113,12 +113,12 @@ final class HammerRadialPlaytest {
         long[] released = {0};
         t.client("Release over a different wedge after " + gesture, mc -> {
             var wedge = HammerPlaytest.button(mc, hovered);
-            mc.screen.mouseMoved(wedge.getX() + wedge.getWidth() / 2.0, wedge.getY() + wedge.getHeight() / 2.0);
+            Playtest.screen(mc).mouseMoved(wedge.getX() + wedge.getWidth() / 2.0, wedge.getY() + wedge.getHeight() / 2.0);
             HammerPlaytest.releaseWheel(mc);
             released[0] = System.nanoTime();
         });
         t.awaitClient("Keep the wheel closed beyond the tap and hold windows after " + gesture, mc -> {
-            Playtest.require(mc.screen == null, "Wheel reopened after " + gesture);
+            Playtest.require(Playtest.screen(mc) == null, "Wheel reopened after " + gesture);
             return System.nanoTime() - released[0] >= 500_000_000L;
         });
         t.server("Preserve exactly the clicked choices after " + gesture, player -> {
@@ -131,14 +131,14 @@ final class HammerRadialPlaytest {
     }
 
     private static void checkBothWheels(Minecraft mc) {
-        int middle = mc.screen.width / 2;
+        int middle = Playtest.screen(mc).width / 2;
         for (var shape : MiningShape.values()) {
             var wedge = HammerPlaytest.button(mc, shapeLabel(shape));
             Playtest.require(wedge.getX() >= 0 && wedge.getRight() < middle, "Mining wedge off its side: " + shape);
         }
         for (var action : HammerAction.values()) {
             var wedge = HammerPlaytest.button(mc, actionLabel(action));
-            Playtest.require(wedge.getX() > middle && wedge.getRight() <= mc.screen.width, "Ability wedge off its side: " + action);
+            Playtest.require(wedge.getX() > middle && wedge.getRight() <= Playtest.screen(mc).width, "Ability wedge off its side: " + action);
         }
     }
 
@@ -159,7 +159,7 @@ final class HammerRadialPlaytest {
 
     static void favorite(Minecraft mc, MiningShape shape) {
         Button wedge = HammerPlaytest.button(mc, shapeLabel(shape));
-        clickAt(mc, wedge.getX() + wedge.getWidth() / 2.0, wedge.getY() + wedge.getHeight() / 2.0, GLFW.GLFW_MOUSE_BUTTON_RIGHT);
+        clickAt(mc, wedge.getX() + wedge.getWidth() / 2.0, wedge.getY() + wedge.getHeight() / 2.0, InputConstants.MOUSE_BUTTON_RIGHT);
     }
 
     private static void clickOuterSector(Minecraft mc, Button wedge, Button center) {
@@ -173,19 +173,19 @@ final class HammerRadialPlaytest {
         double x = cx + dx * scale, y = cy + dy * scale;
         Playtest.require(x < wedge.getX() || x >= wedge.getRight() || y < wedge.getY() || y >= wedge.getBottom(),
                 "Probe must hit the sector outside its nominal button rectangle");
-        clickAt(mc, x, y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        clickAt(mc, x, y, InputConstants.MOUSE_BUTTON_LEFT);
     }
 
     private static void clickAt(Minecraft mc, double x, double y, int button) {
-        mc.screen.mouseMoved(x, y);
+        Playtest.screen(mc).mouseMoved(x, y);
         var click = new MouseButtonEvent(x, y, new MouseButtonInfo(button, 0));
-        Playtest.require(mc.screen.mouseClicked(click, false), "Ignored radial mouse button " + button);
-        mc.screen.mouseReleased(click);
+        Playtest.require(Playtest.screen(mc).mouseClicked(click, false), "Ignored radial mouse button " + button);
+        Playtest.screen(mc).mouseReleased(click);
     }
 
     private static void key(Minecraft mc, int key) {
         var event = new KeyEvent(key, 0, 0);
-        Playtest.require(mc.screen.keyPressed(event), "Ignored radial keyboard input " + key);
-        mc.screen.keyReleased(event);
+        Playtest.require(Playtest.screen(mc).keyPressed(event), "Ignored radial keyboard input " + key);
+        Playtest.screen(mc).keyReleased(event);
     }
 }

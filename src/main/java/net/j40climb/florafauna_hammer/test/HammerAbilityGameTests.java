@@ -13,11 +13,10 @@ import net.j40climb.florafauna_hammer.common.item.abilities.data.ToolConfig;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.ThrowItemPayload;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.UpdateToolConfigPayload;
 import net.j40climb.florafauna_hammer.common.item.projectile.ThrownItemEntity;
-//? if <26.3 {
 import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
-//?}
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
@@ -38,9 +37,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
-//? if >=26.3 {
-/*import net.minecraft.world.phys.Vec3;
-*///?}
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.util.FakePlayer;
@@ -55,11 +51,7 @@ final class HammerAbilityGameTests {
     static void register(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> env) {
         HammerGameTests.registerTest(event, env, "hammer_legacy_saved_stack", HammerAbilityGameTests::legacySavedStack);
         HammerGameTests.registerTest(event, env, "hammer_fresh_and_configured_loot", HammerAbilityGameTests::checkConfigurations);
-        //? if <26.3 {
         HammerGameTests.registerTest(event, env, "hammer_block_action_dispatch", HammerAbilityGameTests::checkBlockActions);
-        //?} else {
-        /*HammerGameTests.registerTest(event, env, "hammer_action_wheel_dispatch", HammerAbilityGameTests::checkWheel);
-        *///?}
         HammerGameTests.registerTest(event, env, "hammer_throw_single_item_and_reload", HammerAbilityGameTests::checkThrow);
         HammerGameTests.registerTest(event, env, "hammer_throw_rejected_or_inventory_full", HammerAbilityGameTests::checkThrowFailure);
     }
@@ -67,11 +59,7 @@ final class HammerAbilityGameTests {
     private static ServerPlayer player(GameTestHelper helper) {
         ServerPlayer player = new FakePlayer(helper.getLevel(), new GameProfile(UUID.randomUUID(), "hammer-test"));
         player.setGameMode(GameType.SURVIVAL);
-        //? if <26.3 {
-        player.setPos(helper.absolutePos(new BlockPos(1, 2, 1)).getCenter());
-        //?} else {
-        /*player.setPos(Vec3.atCenterOf(helper.absolutePos(new BlockPos(1, 2, 1))));
-        *///?}
+        player.setPos(Vec3.atCenterOf(helper.absolutePos(new BlockPos(1, 2, 1))));
         player.setOnGround(true);
         return player;
     }
@@ -98,24 +86,14 @@ final class HammerAbilityGameTests {
         helper.succeed();
     }
 
-    //? if <26.3 {
     private static void checkBlockActions(GameTestHelper helper) {
-    //?} else {
-    /*private static void checkWheel(GameTestHelper helper) {
-    *///?}
         ServerPlayer player = player(helper);
         ItemStack hammer = new ItemStack(HammerRegistry.HAMMER.get());
         player.setItemInHand(InteractionHand.MAIN_HAND, hammer);
         BlockPos target = helper.absolutePos(new BlockPos(1, 1, 1));
-        //? if <26.3 {
-        var hit = new BlockHitResult(target.getCenter(), Direction.UP, target, false);
+        var hit = new BlockHitResult(Vec3.atCenterOf(target), Direction.UP, target, false);
         hammer.set(HammerRegistry.MULTI_BLOCK_MINING, new MiningModeData(MiningShape.FLAT_3X3, 1, 64, true));
         for (var mode : java.util.List.of(HammerAction.AUTO, HammerAction.STRIP, HammerAction.PATH, HammerAction.TILL, HammerAction.THROW)) {
-        //?} else {
-        /*var hit = new BlockHitResult(Vec3.atCenterOf(target), Direction.UP, target, false);
-        hammer.set(HammerRegistry.MULTI_BLOCK_MINING, new MiningModeData(MiningShape.FLAT_3X3, 1, 64, true));
-        for (var mode : HammerAction.values()) {
-        *///?}
             hammer.set(HammerRegistry.HAMMER_ACTION, mode);
             var original = mode == HammerAction.STRIP || mode == HammerAction.THROW ? Blocks.OAK_LOG : Blocks.DIRT;
             helper.getLevel().setBlockAndUpdate(target, original.defaultBlockState());
@@ -127,9 +105,7 @@ final class HammerAbilityGameTests {
                 case STRIP -> Blocks.STRIPPED_OAK_LOG;
                 case TILL -> Blocks.FARMLAND;
                 case THROW -> Blocks.OAK_LOG;
-                //? if <26.3 {
                 default -> throw new AssertionError(mode);
-                //?}
             };
             helper.assertTrue(use.isCanceled() && helper.getLevel().getBlockState(target).is(expected), "Wrong effect for " + mode);
             if (mode == HammerAction.THROW) {
@@ -156,11 +132,7 @@ final class HammerAbilityGameTests {
 
     private static void checkConfigurations(GameTestHelper helper) {
         ServerPlayer player = player(helper);
-        //? if <26.3 {
         ItemStack hammer = HammerStage.TEMPEST.createStack();
-        //?} else {
-        /*ItemStack hammer = new ItemStack(HammerRegistry.HAMMER.get());
-        *///?}
         player.setItemInHand(InteractionHand.MAIN_HAND, hammer);
         var fortune = helper.getLevel().registryAccess().holderOrThrow(Enchantments.FORTUNE);
         var silk = helper.getLevel().registryAccess().holderOrThrow(Enchantments.SILK_TOUCH);

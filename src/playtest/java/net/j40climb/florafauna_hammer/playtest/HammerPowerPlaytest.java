@@ -11,10 +11,15 @@ import net.minecraft.client.gui.screens.inventory.ContainerScreen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntitySpawnReason;
+//? if >=26.3 {
+/*import net.minecraft.world.entity.EntityTypes;*/
+//?} else {
 import net.minecraft.world.entity.EntityType;
+//?}
 import net.minecraft.world.entity.monster.zombie.Husk;
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -29,11 +34,17 @@ final class HammerPowerPlaytest {
     private static final BlockPos CHEST = new BlockPos(0, 202, 3);
     private static final BlockPos ORE = new BlockPos(2, 203, 8);
 
+    //? if >=26.3 {
+    /*private static final Block SCANNER_WALL = Blocks.CONCRETE.gray();*/
+    //?} else {
+    private static final Block SCANNER_WALL = Blocks.GRAY_CONCRETE;
+    //?}
+
     static void steps(Playtest t) {
         t.server("Build the scanner wall, chest and hidden diamond deposit", p -> {
             var level = p.level();
             for (var pos : BlockPos.betweenClosed(-5, 200, -4, 5, 206, 9)) {
-                var block = pos.getY() == 200 || pos.getZ() == 3 ? Blocks.GRAY_CONCRETE : Blocks.AIR;
+                var block = pos.getY() == 200 || pos.getZ() == 3 ? SCANNER_WALL : Blocks.AIR;
                 level.setBlockAndUpdate(pos, block.defaultBlockState());
             }
             level.setBlockAndUpdate(CHEST, Blocks.CHEST.defaultBlockState());
@@ -50,19 +61,19 @@ final class HammerPowerPlaytest {
                         && mc.hitResult instanceof BlockHitResult hit && hit.getBlockPos().equals(CHEST));
         t.client("Set the first-person view", mc -> {
             mc.options.setCameraType(CameraType.FIRST_PERSON);
-            mc.options.hideGui = false;
+            Playtest.showHud(mc);
         });
         HammerMenuPlaytest.choose(t, HammerAction.SCAN);
         t.client("Use a chest with Seismic Scan selected", mc ->
                 mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, (BlockHitResult) mc.hitResult));
-        t.awaitClient("Open the chest and preserve all charge", mc -> mc.screen instanceof ContainerScreen
+        t.awaitClient("Open the chest and preserve all charge", mc -> Playtest.screen(mc) instanceof ContainerScreen
                 && HammerItem.charge(mc.player.getMainHandItem()) == 64);
         t.client("Close the chest and aim at the wall", mc -> {
             mc.player.closeContainer();
             mc.player.setYRot(-23);
         });
         t.awaitClient("Target plain concrete", mc -> mc.hitResult instanceof BlockHitResult hit
-                && mc.level.getBlockState(hit.getBlockPos()).is(Blocks.GRAY_CONCRETE));
+                && mc.level.getBlockState(hit.getBlockPos()).is(SCANNER_WALL));
         long[] fired = {0};
         t.client("Scan the wall", mc -> {
             fired[0] = mc.level.getGameTime();
@@ -84,7 +95,11 @@ final class HammerPowerPlaytest {
         });
         Husk[] target = new Husk[1];
         t.server("Prepare a hostile target beside the landing position", p -> {
+            //? if >=26.3 {
+            /*target[0] = EntityTypes.HUSK.create(p.level(), EntitySpawnReason.TRIGGERED);*/
+            //?} else {
             target[0] = EntityType.HUSK.create(p.level(), EntitySpawnReason.TRIGGERED);
+            //?}
             target[0].setPos(p.position().add(2, 0, 0));
             target[0].setNoAi(true);
             p.level().addFreshEntity(target[0]);
@@ -106,7 +121,7 @@ final class HammerPowerPlaytest {
         });
         t.awaitServer("Land the slam and damage the nearby hostile", p -> target[0].getHealth() < target[0].getMaxHealth()
                 && !p.hasData(HammerRegistry.PENDING_SLAM) && HammerItem.charge(p.getMainHandItem()) >= 52
-                && HammerItem.charge(p.getMainHandItem()) <= 54 && p.level().getBlockState(p.getOnPos()).is(Blocks.GRAY_CONCRETE));
+                && HammerItem.charge(p.getMainHandItem()) <= 54 && p.level().getBlockState(p.getOnPos()).is(SCANNER_WALL));
         t.screenshot("kinetic-impact");
         t.server("Build a ranged lightning target away from the player", p -> {
             p.level().setBlockAndUpdate(new BlockPos(8, 202, 0), Blocks.OBSIDIAN.defaultBlockState());
